@@ -1,26 +1,18 @@
 package com.example.tujofficehoursapp
 
-<<<<<<< HEAD
-=======
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ServerTimestamp
->>>>>>> main
 import java.util.UUID
 
 data class User(
-    val uid: String = "",
+    val uid: String = UUID.randomUUID().toString(),
+    val name: String = "",
     val email: String = "",
     val role: String = "Student"
 )
 
 data class Professor(
     val uid: String = "",
-<<<<<<< HEAD
-    val name: String = "Not Set",
-    val email: String = "",
-    val officeHours: String = "Not specified",
-    val classDetails: String = "Not specified"
-=======
     val name: String = "",
     val email: String = ""
 )
@@ -34,22 +26,13 @@ data class ProfessorOfficeHours(
     val slotDurationMinutes: Int = 10,
     val professorId: String = "",
     val location: String = ""
->>>>>>> main
 )
 
 // MODIFICATION: Replaced Google's Date/DateTime with Firebase's Timestamp.
 // A single Timestamp is sufficient to store the exact date and time of an event.
 data class Reservation(
-    val id: String = UUID.randomUUID().toString(),
     val professorId: String = "",
-    val professorName: String = "",
     val studentId: String = "",
-<<<<<<< HEAD
-    val studentName: String = "",
-    val preferredTime: String = "",
-    val note: String = ""
-)
-=======
     // @ServerTimestamp will automatically populate this with the server's time upon creation.
     // We will overwrite it with the actual appointment time.
     @ServerTimestamp val startTime: Timestamp? = null,
@@ -60,4 +43,3 @@ data class Reservation(
     val studentName: String = ""
     // The old endTimeTimestamp is no longer needed.
 )
->>>>>>> main
