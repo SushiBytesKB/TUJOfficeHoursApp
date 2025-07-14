@@ -1,16 +1,55 @@
 package com.example.tujofficehoursapp
 
+import android.app.Application
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tujofficehoursapp.data.AppDatabase
+import com.example.tujofficehoursapp.data.SettingsRepository
+import com.example.tujofficehoursapp.data.UserSettings
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.tujofficehoursapp.ui.theme.*
+
+class SettingsViewModel(private val repository: SettingsRepository) : ViewModel() {
+    val settingsState = repository.getSettings()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettings())
+
+    fun updateTimezone(timezone: String) = viewModelScope.launch {
+        val currentSettings = settingsState.value ?: UserSettings()
+        repository.saveSettings(currentSettings.copy(timezone = timezone))
+    }
+
+    fun updateIs24Hour(is24Hour: Boolean) = viewModelScope.launch {
+        val currentSettings = settingsState.value ?: UserSettings()
+        repository.saveSettings(currentSettings.copy(is24Hour = is24Hour))
+    }
+}
+
+class SettingsViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+            val database = AppDatabase.getDatabase(application)
+            val repository = SettingsRepository(database.userSettingsDao())
+            @Suppress("UNCHECKED_CAST")
+            return SettingsViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,11 +59,12 @@ fun SettingsScreen(
     onNavigateToProfessors: () -> Unit,
     onNavigateToOfficeHours: () -> Unit,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    viewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(LocalContext.current.applicationContext as Application))
 ) {
-    var timeFormat24hr by remember { mutableStateOf(true) }
-    var notificationsEnabled by remember { mutableStateOf(true) }
+    val settings by viewModel.settingsState.collectAsState()
+    val timeZoneOptions = listOf("Asia/Tokyo", "America/New_York", "GMT+2")
     var isDropdownExpanded by remember { mutableStateOf(false) }
+    var notificationsEnabled by remember { mutableStateOf(true) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -54,7 +94,7 @@ fun SettingsScreen(
                         ) {
                             OutlinedTextField(
                                 readOnly = true,
-                                value = "JST (Japan Standard)",
+                                value = settings?.timezone ?: "JST",
                                 onValueChange = {},
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
                                 modifier = Modifier.menuAnchor()
@@ -63,17 +103,23 @@ fun SettingsScreen(
                                 expanded = isDropdownExpanded,
                                 onDismissRequest = { isDropdownExpanded = false },
                             ) {
-
-                                DropdownMenuItem(text = { Text("JST") }, onClick = { isDropdownExpanded = false })
-                                DropdownMenuItem(text = { Text("EST") }, onClick = { isDropdownExpanded = false })
+                                timeZoneOptions.forEach { zone ->
+                                    DropdownMenuItem(
+                                        text = { Text(zone) },
+                                        onClick = {
+                                            viewModel.updateTimezone(zone)
+                                            isDropdownExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingItem(label = "Use 24-hour format") {
                         Switch(
-                            checked = timeFormat24hr,
-                            onCheckedChange = { timeFormat24hr = it },
+                            checked = settings?.is24Hour ?: true,
+                            onCheckedChange = { viewModel.updateIs24Hour(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = TempleRed

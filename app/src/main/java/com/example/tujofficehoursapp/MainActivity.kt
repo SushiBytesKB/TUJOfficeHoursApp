@@ -14,6 +14,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.example.tujofficehoursapp.ui.theme.TUJOfficeHoursAppTheme
+import com.google.firebase.auth.userProfileChangeRequest
 
 class MainActivity : ComponentActivity() {
 
@@ -74,19 +75,31 @@ fun AppNavigation() {
             }
             composable("signup") {
                 SignUpScreen(
-                    onSignUpClick = { email, password, role ->
+                    // MODIFICATION: The onSignUpClick lambda now accepts a 'name' parameter.
+                    onSignUpClick = { name, email, password, role ->
                         auth.createUserWithEmailAndPassword(email, password)
                             .addOnSuccessListener { result ->
-                                val user = User(uid = result.user!!.uid, email = email, role = role)
+                                val firebaseUser = result.user!!
+                                // MODIFICATION: The User object now includes the name.
+                                val user = User(uid = firebaseUser.uid, name = name, email = email, role = role)
                                 db.collection("users").document(user.uid).set(user)
 
                                 if (role == "Professor") {
-                                    val professorProfile = Professor(uid = user.uid, email = email)
+                                    val professorProfile = Professor(uid = user.uid, name = name, email = email)
                                     db.collection("professors").document(user.uid).set(professorProfile)
                                 }
 
-                                Toast.makeText(navController.context, "Sign Up Successful!", Toast.LENGTH_SHORT).show()
-                                navController.popBackStack()
+                                // MODIFICATION: Set the user's display name in Firebase Authentication.
+                                val profileUpdates = userProfileChangeRequest {
+                                    displayName = name
+                                }
+                                firebaseUser.updateProfile(profileUpdates)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Toast.makeText(navController.context, "Sign Up Successful!", Toast.LENGTH_SHORT).show()
+                                            navController.popBackStack()
+                                        }
+                                    }
                             }
                             .addOnFailureListener { /* Handle sign-up failure */ }
                     },
@@ -103,27 +116,9 @@ fun AppNavigation() {
             composable("student_professors") {
                 ProfessorsScreen(
                     onNavigateToReservations = { navController.navigate("student_reservations") },
-                    onNavigateToSettings = { navController.navigate("settings") },
-                    onProfessorClick = { professorId ->
-                        navController.navigate("professor_details/$professorId")
-                    }
+                    onNavigateToSettings = { navController.navigate("settings") }
                 )
             }
-            composable(
-                "professor_details/{professorId}",
-                arguments = listOf(navArgument("professorId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val professorId = backStackEntry.arguments?.getString("professorId") ?: ""
-                ProfessorDetailScreen(
-                    professorId = professorId,
-                    onBooked = {
-                        navController.navigate("student_reservations") {
-                            popUpTo("student_professors") { inclusive = true }
-                        }
-                    }
-                )
-            }
-
             composable("professor_reserved") {
                 ReservedScreen(
                     onNavigateToOfficeHours = { navController.navigate("professor_office_hours") },

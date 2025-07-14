@@ -1,5 +1,7 @@
+// Professors.kt
 package com.example.tujofficehoursapp
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +18,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tujofficehoursapp.ui.theme.*
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
@@ -23,12 +26,28 @@ import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.time.*
+import java.time.format.DateTimeFormatter
+import java.util.*
+
+data class BookingUiState(
+    val professors: List<Professor> = emptyList(),
+    val selectedProfessor: Professor? = null,
+    val officeHours: ProfessorOfficeHours? = null,
+    val showBookingDialog: Boolean = false,
+    val selectedDate: LocalDate? = null,
+    val availableSlots: List<LocalTime> = emptyList(),
+    val isLoadingSlots: Boolean = false
+)
 
 class ProfessorsViewModel : ViewModel() {
     private val db = Firebase.firestore
-    private val _professors = MutableStateFlow<List<Professor>>(emptyList())
-    val professors = _professors.asStateFlow()
+    private val auth = Firebase.auth
+    private val _uiState = MutableStateFlow(BookingUiState())
+    val uiState = _uiState.asStateFlow()
 
     init {
         fetchProfessors()
@@ -37,23 +56,140 @@ class ProfessorsViewModel : ViewModel() {
     private fun fetchProfessors() {
         db.collection("professors").addSnapshotListener { snapshot, _ ->
             if (snapshot != null) {
-                _professors.value = snapshot.toObjects()
+                _uiState.update { it.copy(professors = snapshot.toObjects()) }
             }
         }
     }
+
+    fun onProfessorSelected(professor: Professor) {
+        _uiState.update {
+            it.copy(
+                selectedProfessor = professor,
+                showBookingDialog = true,
+                officeHours = null,
+                selectedDate = null,
+                availableSlots = emptyList()
+            )
+        }
+        db.collection("professors").document(professor.uid)
+            .collection("config").document("officeHours")
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    _uiState.update { it.copy(officeHours = document.toObject<ProfessorOfficeHours>()) }
+                }
+            }
+    }
+
+    fun onDateSelected(date: LocalDate) {
+        _uiState.update { it.copy(selectedDate = date, isLoadingSlots = true, availableSlots = emptyList()) }
+        val professorId = _uiState.value.selectedProfessor?.uid ?: return
+        val officeHours = _uiState.value.officeHours ?: return
+
+        viewModelScope.launch {
+            val allSlots = generateAllPossibleSlots(officeHours)
+            val bookedSlots = getBookedSlotsForDate(professorId, date)
+            val availableSlots = allSlots.filter { it !in bookedSlots }
+            _uiState.update { it.copy(availableSlots = availableSlots, isLoadingSlots = false) }
+        }
+    }
+
+    private fun generateAllPossibleSlots(officeHours: ProfessorOfficeHours): List<LocalTime> {
+        val slots = mutableListOf<LocalTime>()
+        // MODIFICATION: Parse time from "HH:mm" string
+        val formatter = DateTimeFormatter.ISO_LOCAL_TIME
+        val startTime = LocalTime.parse(officeHours.startTime, formatter)
+        val endTime = LocalTime.parse(officeHours.endTime, formatter)
+
+        val duration = officeHours.slotDurationMinutes.toLong()
+        var currentTime = startTime
+
+        while (currentTime.plusMinutes(duration) <= endTime) {
+            slots.add(currentTime)
+            currentTime = currentTime.plusMinutes(duration)
+        }
+        return slots
+    }
+
+    private suspend fun getBookedSlotsForDate(professorId: String, date: LocalDate): Set<LocalTime> {
+        // MODIFICATION: Query based on a start and end timestamp for the selected day
+        val zoneId = ZoneId.systemDefault()
+        val startOfDay = Timestamp(date.atStartOfDay(zoneId).toInstant())
+        val endOfDay = Timestamp(date.plusDays(1).atStartOfDay(zoneId).toInstant())
+
+        return try {
+            val snapshot = db.collection("reservations")
+                .whereEqualTo("professorId", professorId)
+                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+                .whereLessThan("startTime", endOfDay)
+                .get()
+                .await()
+
+            snapshot.toObjects<Reservation>().mapNotNull { reservation ->
+                reservation.startTime?.let {
+                    Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong())
+                        .atZone(zoneId)
+                        .toLocalTime()
+                }
+            }.toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
+    fun bookSlot(slot: LocalTime, note: String, onComplete: () -> Unit) {
+        val studentId = auth.currentUser?.uid ?: return
+        val studentName = auth.currentUser?.displayName ?: "Unknown Student"
+        val professor = _uiState.value.selectedProfessor!!
+        val date = _uiState.value.selectedDate!!
+        val officeHours = _uiState.value.officeHours!!
+        val duration = officeHours.slotDurationMinutes.toLong()
+
+        // MODIFICATION: Convert LocalDate and LocalTime to Firebase Timestamps
+        val zoneId = ZoneId.systemDefault()
+        val startDateTime = date.atTime(slot)
+        val startTimestamp = Timestamp(startDateTime.atZone(zoneId).toInstant())
+
+        val endDateTime = startDateTime.plusMinutes(duration)
+        val endTimestamp = Timestamp(endDateTime.atZone(zoneId).toInstant())
+
+        val reservation = Reservation(
+            professorId = professor.uid,
+            studentId = studentId,
+            studentName = studentName,
+            professorName = professor.name,
+            startTime = startTimestamp,
+            endTime = endTimestamp,
+            note = note
+        )
+
+        db.collection("reservations").add(reservation).addOnSuccessListener { onComplete() }
+    }
+
+    fun onDismissDialog() {
+        _uiState.update {
+            it.copy(showBookingDialog = false, selectedProfessor = null, officeHours = null, selectedDate = null)
+        }
+    }
 }
+
+// UI Composables (ProfessorCard, BookingDialog, etc.) remain largely the same,
+// as they interact with the ViewModel, not directly with the data models.
+// The existing UI code should work with the updated ViewModel state.
 
 @Composable
 fun ProfessorsScreen(
     onNavigateToReservations: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onProfessorClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfessorsViewModel = viewModel()
 ) {
-    val professors by viewModel.professors.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
         Column(
             modifier = Modifier.weight(1f).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -67,23 +203,36 @@ fun ProfessorsScreen(
                 modifier = Modifier.padding(bottom = 24.dp)
             )
             LazyColumn(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                items(professors) { professor ->
+                items(uiState.professors) { professor ->
                     ProfessorCard(
                         professor = professor,
-                        onClick = { onProfessorClick(professor.uid) }
+                        onClick = { viewModel.onProfessorSelected(professor) }
                     )
                 }
             }
         }
-
         StudentBottomNavBar(
             currentRoute = "student_professors",
             onNavigateToReservations = onNavigateToReservations,
             onNavigateToProfessors = { /* Already here */ },
             onNavigateToSettings = onNavigateToSettings
+        )
+    }
+
+    if (uiState.showBookingDialog) {
+        BookingDialog(
+            uiState = uiState,
+            onDismiss = { viewModel.onDismissDialog() },
+            onDateSelected = { viewModel.onDateSelected(it) },
+            onConfirmBooking = { slot, note ->
+                viewModel.bookSlot(slot, note) {
+                    Toast.makeText(context, "Booking successful!", Toast.LENGTH_SHORT).show()
+                    viewModel.onDismissDialog()
+                }
+            }
         )
     }
 }
@@ -107,117 +256,131 @@ fun ProfessorCard(professor: Professor, onClick: () -> Unit, modifier: Modifier 
     }
 }
 
-@Composable
-fun ProfessorDetailScreen(
-    professorId: String,
-    onBooked: () -> Unit
-) {
-    val db = Firebase.firestore
-    var professor by remember { mutableStateOf<Professor?>(null) }
-    var showBookingDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(professorId) {
-        db.collection("professors").document(professorId).get()
-            .addOnSuccessListener { document ->
-                professor = document.toObject<Professor>()
-            }
-    }
-
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            professor?.let {
-                Text(it.name, style = Typography.headlineLarge, fontWeight = FontWeight.Bold, color = TempleRed)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(it.email, style = Typography.titleMedium, color = TextColor.copy(alpha = 0.7f))
-                Spacer(modifier = Modifier.height(24.dp))
-
-                DetailItem(label = "Class Details", value = it.classDetails)
-                DetailItem(label = "Office Hours", value = it.officeHours)
-                Spacer(modifier = Modifier.weight(1f))
-
-                Button(
-                    onClick = { showBookingDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = TempleRed)
-                ) {
-                    Text("Request Appointment", modifier = Modifier.padding(8.dp))
-                }
-            }
-        }
-    }
-
-    if (showBookingDialog) {
-        BookingDialog(
-            professor = professor!!,
-            onDismiss = { showBookingDialog = false },
-            onConfirmBooking = { studentName, time, note ->
-                val newReservation = Reservation(
-                    professorId = professor!!.uid,
-                    professorName = professor!!.name,
-                    studentId = Firebase.auth.currentUser?.uid ?: "",
-                    studentName = studentName,
-                    preferredTime = time,
-                    note = note
-                )
-                db.collection("reservations").add(newReservation)
-                    .addOnSuccessListener {
-                        showBookingDialog = false
-                        onBooked()
-                    }
-            }
-        )
-    }
-}
-
-@Composable
-private fun DetailItem(label: String, value: String) {
-    Column(modifier = Modifier.padding(bottom = 16.dp)) {
-        Text(label, style = Typography.titleMedium, fontWeight = FontWeight.Bold, color = TextColor)
-        Text(value, style = Typography.bodyLarge, color = TextColor.copy(alpha = 0.8f))
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingDialog(
-    professor: Professor,
+    uiState: BookingUiState,
     onDismiss: () -> Unit,
-    onConfirmBooking: (String, String, String) -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
+    onConfirmBooking: (LocalTime, String) -> Unit
 ) {
-    var studentName by remember { mutableStateOf("") }
-    var preferredTime by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedSlot by remember { mutableStateOf<LocalTime?>(null) }
+    var isSlotDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Request appointment with ${professor.name}") },
+        title = { Text("Book with ${uiState.selectedProfessor?.name}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = studentName, onValueChange = { studentName = it }, label = { Text("Your Name") })
-                OutlinedTextField(value = preferredTime, onValueChange = { preferredTime = it }, label = { Text("Preferred Time") })
-                OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text("Quick Note") })
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = uiState.selectedDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "Select a date",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date") },
+                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = isSlotDropdownExpanded,
+                    onExpandedChange = {
+                        if (uiState.selectedDate != null && !uiState.isLoadingSlots) {
+                            isSlotDropdownExpanded = !isSlotDropdownExpanded
+                        }
+                    },
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = selectedSlot?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Select a time slot",
+                        onValueChange = {},
+                        label = { Text("Available Slots") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSlotDropdownExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isSlotDropdownExpanded,
+                        onDismissRequest = { isSlotDropdownExpanded = false },
+                    ) {
+                        if (uiState.isLoadingSlots) {
+                            DropdownMenuItem(text = { Text("Loading...") }, onClick = {})
+                        } else if (uiState.availableSlots.isEmpty()) {
+                            DropdownMenuItem(text = { Text("No slots available") }, onClick = {})
+                        } else {
+                            uiState.availableSlots.forEach { slot ->
+                                DropdownMenuItem(
+                                    text = { Text(slot.format(DateTimeFormatter.ofPattern("HH:mm"))) },
+                                    onClick = {
+                                        selectedSlot = slot
+                                        isSlotDropdownExpanded = false
+                                    }
+
+                                )
+                            }
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note for professor (optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (studentName.isNotBlank() && preferredTime.isNotBlank()) {
-                        onConfirmBooking(studentName, preferredTime, note)
-                    } else {
-                        Toast.makeText(context, "Please fill in your name and time.", Toast.LENGTH_SHORT).show()
-                    }
+                    selectedSlot?.let { onConfirmBooking(it, note) }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = TempleRed)
-            ) { Text("Submit Request") }
+                enabled = selectedSlot != null
+            ) { Text("Book Now") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { dateInMillis ->
+                        val selectedLocalDate = Instant.ofEpochMilli(dateInMillis)
+                            .atZone(ZoneId.systemDefault()).toLocalDate()
+
+                        val validDaysOfWeek = uiState.officeHours?.daysOfWeek?.mapNotNull {
+                            try {
+                                DayOfWeek.valueOf(it.uppercase(Locale.ROOT))
+                            } catch (e: IllegalArgumentException) { null }
+                        } ?: emptyList()
+
+                        val today = LocalDate.now()
+
+                        if (selectedLocalDate.dayOfWeek in validDaysOfWeek && !selectedLocalDate.isBefore(today)) {
+                            onDateSelected(selectedLocalDate)
+                            showDatePicker = false
+                        } else {
+                            Toast.makeText(context, "Professor is not available on this day.", Toast.LENGTH_SHORT).show()
+                        }
+                    } ?: run {
+                        Toast.makeText(context, "Please select a date.", Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }

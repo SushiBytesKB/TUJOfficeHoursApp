@@ -1,86 +1,135 @@
 package com.example.tujofficehoursapp
 
+import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tujofficehoursapp.data.AppDatabase
+import com.example.tujofficehoursapp.data.SettingsRepository
+import com.example.tujofficehoursapp.data.UserSettings
 import com.example.tujofficehoursapp.ui.theme.*
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.ktx.Firebase
+import com.google.type.DateTime
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import com.google.type.Date as GoogleDate
 
-class ReservedViewModel : ViewModel() {
+// MODIFICATION: New UI state class to hold both reservations and user settings for formatting.
+data class ReservedUiState(
+    val bookings: List<Reservation> = emptyList(),
+    val settings: UserSettings = UserSettings()
+)
+
+// MODIFICATION: ViewModel now gets settings from the repository to format dates/times correctly.
+class ReservedViewModel(settingsRepository: SettingsRepository) : ViewModel() {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
-    private val _bookings = MutableStateFlow<List<Reservation>>(emptyList())
-    val bookings = _bookings.asStateFlow()
+    private val userId = auth.currentUser?.uid ?: ""
 
-    init {
-        fetchProfessorBookings()
-    }
+    // MODIFICATION: Combine the reservations flow and settings flow into one UI state.
+    val uiState: StateFlow<ReservedUiState> = combine(
+        getBookingsFlow(),
+        settingsRepository.getSettings()
+    ) { bookings, settings ->
+        ReservedUiState(bookings, settings ?: UserSettings())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ReservedUiState()
+    )
 
-    private fun fetchProfessorBookings() {
-        val userId = auth.currentUser?.uid ?: return
-        viewModelScope.launch {
-            db.collection("reservations")
-                .whereEqualTo("professorId", userId)
-                .addSnapshotListener { snapshot, _ ->
-                    if (snapshot != null) {
-                        _bookings.value = snapshot.toObjects()
-                    }
+    private fun getBookingsFlow(): StateFlow<List<Reservation>> {
+        val flow = MutableStateFlow<List<Reservation>>(emptyList())
+        // MODIFICATION: Query now checks the endTime to only show upcoming reservations for this professor.
+        db.collection("reservations")
+            .whereEqualTo("professorId", userId)
+            .whereGreaterThan("endTimeTimestamp", Timestamp.now())
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    flow.value = snapshot.toObjects()
                 }
-        }
+            }
+        return flow
     }
 }
 
+// MODIFICATION: New ViewModel Factory to provide the repository to the ViewModel.
+class ReservedViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ReservedViewModel::class.java)) {
+            val database = AppDatabase.getDatabase(application)
+            val repository = SettingsRepository(database.userSettingsDao())
+            @Suppress("UNCHECKED_CAST")
+            return ReservedViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+
+// The UI for the Professor's Reserved screen
 @Composable
 fun ReservedScreen(
     onNavigateToOfficeHours: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReservedViewModel = viewModel()
+    // MODIFICATION: ViewModel is now created with the factory.
+    viewModel: ReservedViewModel = viewModel(factory = ReservedViewModelFactory(LocalContext.current.applicationContext as Application))
 ) {
-    val bookings by viewModel.bookings.collectAsState()
+    // MODIFICATION: Collect the combined UI state.
+    val uiState by viewModel.uiState.collectAsState()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.weight(1f).padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Student Reservations",
-                style = Typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TempleRed,
-                fontFamily = TujFont,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+    Column(
+        modifier = modifier.fillMaxWidth().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Reserved by Students",
+            style = Typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = TempleRed,
+            fontFamily = TujFont,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
 
-            if (bookings.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("You have no upcoming appointments.", color = TextColor.copy(alpha = 0.7f))
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(bookings) { reservation ->
-                        ReservationInfoCard(reservation = reservation, isProfessorView = true)
-                    }
+        if (uiState.bookings.isEmpty()) {
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text("You have no upcoming appointments.", color = TextColor.copy(alpha = 0.7f))
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(uiState.bookings) { booking ->
+                    // MODIFICATION: Pass the booking and settings to the card for correct formatting.
+                    // Set isProfessorView to true to show the student's name.
+                    ReservationInfoCard(
+                        reservation = booking,
+                        settings = uiState.settings,
+                        isProfessorView = true
+                    )
                 }
             }
         }
@@ -93,3 +142,5 @@ fun ReservedScreen(
         )
     }
 }
+
+
