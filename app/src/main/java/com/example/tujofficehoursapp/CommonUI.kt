@@ -13,10 +13,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.tujofficehoursapp.data.UserSettings
 import com.example.tujofficehoursapp.ui.theme.*
-import com.google.type.DateTime
+import com.google.firebase.Timestamp
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import com.google.type.Date as GoogleDate
 
 
 // StudentBottomNavBar remains the same
@@ -85,7 +85,7 @@ fun ProfessorBottomNavBar(
     }
 }
 
-// MODIFICATION: This is the new, centralized card for displaying reservation details.
+// MODIFICATION: This card is heavily updated to work with Timestamps.
 @Composable
 fun ReservationInfoCard(
     reservation: Reservation,
@@ -93,26 +93,25 @@ fun ReservationInfoCard(
     isProfessorView: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    fun formatTimestamp(dateTime: DateTime, is24Hour: Boolean, zoneId: ZoneId): String {
+    // Helper function to format a Firebase Timestamp into a time string (e.g., "09:30 AM" or "15:30")
+    fun formatTime(timestamp: Timestamp?, is24Hour: Boolean, zoneId: ZoneId): String {
+        if (timestamp == null) return ""
         val timePattern = if (is24Hour) "HH:mm" else "hh:mm a"
         val formatter = DateTimeFormatter.ofPattern(timePattern).withZone(zoneId)
-        val localTime = java.time.LocalTime.of(dateTime.hours, dateTime.minutes)
-        return formatter.format(localTime)
+        return formatter.format(Instant.ofEpochSecond(timestamp.seconds, timestamp.nanoseconds.toLong()))
     }
 
-    fun formatDate(googleDate: GoogleDate, zoneId: ZoneId): String {
-        val localDate = java.time.LocalDate.of(googleDate.year, googleDate.month, googleDate.day)
+    // Helper function to format a Firebase Timestamp into a date string (e.g., "Monday, July 14")
+    fun formatDate(timestamp: Timestamp?, zoneId: ZoneId): String {
+        if (timestamp == null) return ""
         val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d").withZone(zoneId)
-        return formatter.format(localDate)
+        return formatter.format(Instant.ofEpochSecond(timestamp.seconds, timestamp.nanoseconds.toLong()))
     }
-
-    val defaultTime = DateTime.newBuilder().setHours(0).setMinutes(0).build()
-    val resultStartTime = if (reservation.startTime == null) defaultTime else reservation.startTime
-    val resultEndTime = if (reservation.endTime == null) defaultTime else reservation.endTime
 
     val zoneId = remember(settings.timezone) { ZoneId.of(settings.timezone) }
-    val time = "${formatTimestamp(resultStartTime, settings.is24Hour, zoneId)} - ${formatTimestamp(resultEndTime, settings.is24Hour, zoneId)}"
-    val dayAndDate = formatDate(reservation.date, zoneId)
+
+    val time = "${formatTime(reservation.startTime, settings.is24Hour, zoneId)} - ${formatTime(reservation.endTime, settings.is24Hour, zoneId)}"
+    val dayAndDate = formatDate(reservation.startTime, zoneId)
 
     val title = if (isProfessorView) {
         reservation.studentName
@@ -141,7 +140,6 @@ fun ReservationInfoCard(
     }
 }
 
-// MODIFICATION: A reusable row for displaying details in the card, with bold label.
 @Composable
 fun ReservationDetailRow(label: String, value: String) {
     Row(verticalAlignment = Alignment.Top) {

@@ -22,8 +22,6 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.ktx.Firebase
-import com.google.type.DateTime
-import com.google.type.TimeZone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -50,6 +48,8 @@ class MyOfficeHoursViewModel : ViewModel() {
         }
     }
 
+    // MODIFICATION: This function now works with LocalTime from the UI
+    // and saves times as "HH:mm" strings.
     fun saveOfficeHours(
         days: Set<String>,
         startTime: LocalTime,
@@ -58,22 +58,12 @@ class MyOfficeHoursViewModel : ViewModel() {
         location: String,
         onComplete: () -> Unit
     ) {
-        val startDateTime = DateTime.newBuilder()
-            .setHours(startTime.hour)
-            .setMinutes(startTime.minute)
-            .setTimeZone(TimeZone.newBuilder().setId("Asia/Tokyo").build())
-            .build()
-
-        val endDateTime = DateTime.newBuilder()
-            .setHours(endTime.hour)
-            .setMinutes(endTime.minute)
-            .setTimeZone(TimeZone.newBuilder().setId("Asia/Tokyo").build())
-            .build()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
         val newOfficeHours = ProfessorOfficeHours(
             daysOfWeek = days.toList().sorted(),
-            startTime = startDateTime,
-            endTime = endDateTime,
+            startTime = startTime.format(formatter), // Format to string
+            endTime = endTime.format(formatter),   // Format to string
             slotDurationMinutes = duration,
             professorId = userId,
             location = location
@@ -104,12 +94,13 @@ fun MyOfficeHoursScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
+    // MODIFICATION: This now correctly parses the time string from the data model.
     LaunchedEffect(officeHours) {
         officeHours?.let {
             selectedDays = it.daysOfWeek.toSet()
-            // Handle nullable start/end times from the data model
-            it.startTime?.let { st -> startTime = LocalTime.of(st.hours, st.minutes) }
-            it.endTime?.let { et -> endTime = LocalTime.of(et.hours, et.minutes) }
+            val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            startTime = LocalTime.parse(it.startTime, formatter)
+            endTime = LocalTime.parse(it.endTime, formatter)
             slotDuration = it.slotDurationMinutes.toString()
             location = it.location
         }

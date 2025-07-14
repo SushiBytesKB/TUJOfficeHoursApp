@@ -2,6 +2,7 @@
 package com.example.tujofficehoursapp
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,22 +24,14 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.ktx.Firebase
-import com.google.type.Date
-import com.google.type.DateTime
-import com.google.type.TimeZone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
+import java.time.*
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import android.widget.Toast
-import androidx.navigation.compose.rememberNavController
+import java.util.*
 
 data class BookingUiState(
     val professors: List<Professor> = emptyList(),
@@ -95,16 +88,19 @@ class ProfessorsViewModel : ViewModel() {
 
         viewModelScope.launch {
             val allSlots = generateAllPossibleSlots(officeHours)
-            val bookedStartTimes = getBookedSlotsForDate(professorId, date)
-            val availableSlots = allSlots.filter { it !in bookedStartTimes }
+            val bookedSlots = getBookedSlotsForDate(professorId, date)
+            val availableSlots = allSlots.filter { it !in bookedSlots }
             _uiState.update { it.copy(availableSlots = availableSlots, isLoadingSlots = false) }
         }
     }
 
     private fun generateAllPossibleSlots(officeHours: ProfessorOfficeHours): List<LocalTime> {
         val slots = mutableListOf<LocalTime>()
-        val startTime = officeHours.startTime?.let { LocalTime.of(it.hours, it.minutes) } ?: return emptyList()
-        val endTime = officeHours.endTime?.let { LocalTime.of(it.hours, it.minutes) } ?: return emptyList()
+        // MODIFICATION: Parse time from "HH:mm" string
+        val formatter = DateTimeFormatter.ISO_LOCAL_TIME
+        val startTime = LocalTime.parse(officeHours.startTime, formatter)
+        val endTime = LocalTime.parse(officeHours.endTime, formatter)
+
         val duration = officeHours.slotDurationMinutes.toLong()
         var currentTime = startTime
 
@@ -116,20 +112,27 @@ class ProfessorsViewModel : ViewModel() {
     }
 
     private suspend fun getBookedSlotsForDate(professorId: String, date: LocalDate): Set<LocalTime> {
-        val dateForQuery = Date.newBuilder().setYear(date.year).setMonth(date.monthValue).setDay(date.dayOfMonth).build()
+        // MODIFICATION: Query based on a start and end timestamp for the selected day
+        val zoneId = ZoneId.systemDefault()
+        val startOfDay = Timestamp(date.atStartOfDay(zoneId).toInstant())
+        val endOfDay = Timestamp(date.plusDays(1).atStartOfDay(zoneId).toInstant())
 
         return try {
             val snapshot = db.collection("reservations")
                 .whereEqualTo("professorId", professorId)
-                .whereEqualTo("date", dateForQuery)
+                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+                .whereLessThan("startTime", endOfDay)
                 .get()
-                .await() // Use await() for proper suspension
+                .await()
 
             snapshot.toObjects<Reservation>().mapNotNull { reservation ->
-                reservation.startTime?.let { LocalTime.of(it.hours, it.minutes) }
+                reservation.startTime?.let {
+                    Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong())
+                        .atZone(zoneId)
+                        .toLocalTime()
+                }
             }.toSet()
         } catch (e: Exception) {
-            // Handle exceptions (e.g., network error)
             emptySet()
         }
     }
@@ -140,34 +143,23 @@ class ProfessorsViewModel : ViewModel() {
         val professor = _uiState.value.selectedProfessor!!
         val date = _uiState.value.selectedDate!!
         val officeHours = _uiState.value.officeHours!!
-        val duration = officeHours.slotDurationMinutes
-        val professorName = professor.name
+        val duration = officeHours.slotDurationMinutes.toLong()
 
-        val startTime = DateTime.newBuilder().setYear(date.year).setMonth(date.monthValue).setDay(date.dayOfMonth)
-            .setHours(slot.hour).setMinutes(slot.minute)
-            .setTimeZone(TimeZone.newBuilder().setId(ZoneId.systemDefault().id))
-            .build()
+        // MODIFICATION: Convert LocalDate and LocalTime to Firebase Timestamps
+        val zoneId = ZoneId.systemDefault()
+        val startDateTime = date.atTime(slot)
+        val startTimestamp = Timestamp(startDateTime.atZone(zoneId).toInstant())
 
-        val endTimeLocal = slot.plusMinutes(duration.toLong())
-        val endDateTime = DateTime.newBuilder().setYear(date.year).setMonth(date.monthValue).setDay(date.dayOfMonth)
-            .setHours(endTimeLocal.hour).setMinutes(endTimeLocal.minute)
-            .setTimeZone(TimeZone.newBuilder().setId(ZoneId.systemDefault().id))
-            .build()
-
-        val dateForDb = Date.newBuilder().setYear(date.year).setMonth(date.monthValue).setDay(date.dayOfMonth).build()
-
-        val endTimeForTimestamp = date.atTime(endTimeLocal)
-        val endTimeTimestamp = Timestamp(endTimeForTimestamp.atZone(ZoneId.systemDefault()).toEpochSecond(), 0)
+        val endDateTime = startDateTime.plusMinutes(duration)
+        val endTimestamp = Timestamp(endDateTime.atZone(zoneId).toInstant())
 
         val reservation = Reservation(
             professorId = professor.uid,
             studentId = studentId,
             studentName = studentName,
-            professorName = professorName,
-            date = dateForDb,
-            startTime = startTime,
-            endTime = endDateTime,
-            endTimeTimestamp = endTimeTimestamp,
+            professorName = professor.name,
+            startTime = startTimestamp,
+            endTime = endTimestamp,
             note = note
         )
 
@@ -181,6 +173,9 @@ class ProfessorsViewModel : ViewModel() {
     }
 }
 
+// UI Composables (ProfessorCard, BookingDialog, etc.) remain largely the same,
+// as they interact with the ViewModel, not directly with the data models.
+// The existing UI code should work with the updated ViewModel state.
 
 @Composable
 fun ProfessorsScreen(
@@ -357,10 +352,9 @@ fun BookingDialog(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                // MODIFICATION: All validation logic is now here
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { dateInMillis ->
-                        val selectedLocalDate = java.time.Instant.ofEpochMilli(dateInMillis)
+                        val selectedLocalDate = Instant.ofEpochMilli(dateInMillis)
                             .atZone(ZoneId.systemDefault()).toLocalDate()
 
                         val validDaysOfWeek = uiState.officeHours?.daysOfWeek?.mapNotNull {
@@ -371,16 +365,13 @@ fun BookingDialog(
 
                         val today = LocalDate.now()
 
-                        // Check if the selected date is valid
                         if (selectedLocalDate.dayOfWeek in validDaysOfWeek && !selectedLocalDate.isBefore(today)) {
                             onDateSelected(selectedLocalDate)
                             showDatePicker = false
                         } else {
-                            // If not valid, show a message and keep the dialog open
                             Toast.makeText(context, "Professor is not available on this day.", Toast.LENGTH_SHORT).show()
                         }
                     } ?: run {
-                        // Case where no date was selected at all
                         Toast.makeText(context, "Please select a date.", Toast.LENGTH_SHORT).show()
                     }
                 }) { Text("OK") }
@@ -389,7 +380,6 @@ fun BookingDialog(
                 TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
         ) {
-            // MODIFICATION: The dateValidator parameter is removed entirely from the DatePicker
             DatePicker(state = datePickerState)
         }
     }
