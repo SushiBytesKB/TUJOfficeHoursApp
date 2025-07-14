@@ -217,6 +217,15 @@ fun AppNavigation() {
                                 .addOnSuccessListener {
                                     // MODIFICATION: Display a success message before navigating.
                                     Toast.makeText(navController.context, "Login Successful!", Toast.LENGTH_SHORT).show()
+//                                    val uid = auth.currentUser!!.uid
+//
+//                                    // Get and save the FCM token
+//                                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+//                                        if (task.isSuccessful) {
+//                                            val token = task.result
+//                                            db.collection("users").document(uid).update("fcmTokens", com.google.firebase.firestore.FieldValue.arrayUnion(token))
+//                                        }
+//                                    }
 
                                     db.collection("users").document(auth.currentUser!!.uid).get()
                                         .addOnSuccessListener { doc ->
@@ -269,7 +278,13 @@ fun AppNavigation() {
                                         }
                                     }
                             }
-                            .addOnFailureListener { /* Handle sign-up failure */ }
+                            .addOnFailureListener { exception ->
+                                Toast.makeText(
+                                    navController.context,
+                                    "Error: ${exception.localizedMessage}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                     },
                     onNavigateToLogin = { navController.popBackStack() }
                 )

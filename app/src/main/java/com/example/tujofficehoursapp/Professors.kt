@@ -257,6 +257,133 @@ fun ProfessorCard(professor: Professor, onClick: () -> Unit, modifier: Modifier 
 }
 
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun BookingDialog(
+//    uiState: BookingUiState,
+//    onDismiss: () -> Unit,
+//    onDateSelected: (LocalDate) -> Unit,
+//    onConfirmBooking: (LocalTime, String) -> Unit
+//) {
+//    var note by remember { mutableStateOf("") }
+//    var showDatePicker by remember { mutableStateOf(false) }
+//    var selectedSlot by remember { mutableStateOf<LocalTime?>(null) }
+//    var isSlotDropdownExpanded by remember { mutableStateOf(false) }
+//    val context = LocalContext.current
+//
+//    val datePickerState = rememberDatePickerState(
+//        initialSelectedDateMillis = System.currentTimeMillis()
+//    )
+//
+//    AlertDialog(
+//        onDismissRequest = onDismiss,
+//        title = { Text("Book with ${uiState.selectedProfessor?.name}") },
+//        text = {
+//            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+//                OutlinedTextField(
+//                    value = uiState.selectedDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "Select a date",
+//                    onValueChange = {},
+//                    readOnly = true,
+//                    label = { Text("Date") },
+//                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }
+//                )
+//
+//                ExposedDropdownMenuBox(
+//                    expanded = isSlotDropdownExpanded,
+//                    onExpandedChange = {
+//                        if (uiState.selectedDate != null && !uiState.isLoadingSlots) {
+//                            isSlotDropdownExpanded = !isSlotDropdownExpanded
+//                        }
+//                    },
+//                ) {
+//                    OutlinedTextField(
+//                        readOnly = true,
+//                        value = selectedSlot?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Select a time slot",
+//                        onValueChange = {},
+//                        label = { Text("Available Slots") },
+//                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSlotDropdownExpanded) },
+//                        modifier = Modifier.menuAnchor().fillMaxWidth()
+//                    )
+//                    ExposedDropdownMenu(
+//                        expanded = isSlotDropdownExpanded,
+//                        onDismissRequest = { isSlotDropdownExpanded = false },
+//                    ) {
+//                        if (uiState.isLoadingSlots) {
+//                            DropdownMenuItem(text = { Text("Loading...") }, onClick = {})
+//                        } else if (uiState.availableSlots.isEmpty()) {
+//                            DropdownMenuItem(text = { Text("No slots available") }, onClick = {})
+//                        } else {
+//                            uiState.availableSlots.forEach { slot ->
+//                                DropdownMenuItem(
+//                                    text = { Text(slot.format(DateTimeFormatter.ofPattern("HH:mm"))) },
+//                                    onClick = {
+//                                        selectedSlot = slot
+//                                        isSlotDropdownExpanded = false
+//                                    }
+//
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                OutlinedTextField(
+//                    value = note,
+//                    onValueChange = { note = it },
+//                    label = { Text("Note for professor (optional)") },
+//                    modifier = Modifier.fillMaxWidth()
+//                )
+//            }
+//        },
+//        confirmButton = {
+//            Button(
+//                onClick = {
+//                    selectedSlot?.let { onConfirmBooking(it, note) }
+//                },
+//                enabled = selectedSlot != null
+//            ) { Text("Book Now") }
+//        },
+//        dismissButton = {
+//            TextButton(onClick = onDismiss) { Text("Cancel") }
+//        }
+//    )
+//
+//    if (showDatePicker) {
+//        DatePickerDialog(
+//            onDismissRequest = { showDatePicker = false },
+//            confirmButton = {
+//                TextButton(onClick = {
+//                    datePickerState.selectedDateMillis?.let { dateInMillis ->
+//                        val selectedLocalDate = Instant.ofEpochMilli(dateInMillis)
+//                            .atZone(ZoneId.systemDefault()).toLocalDate()
+//
+//                        val validDaysOfWeek = uiState.officeHours?.daysOfWeek?.mapNotNull {
+//                            try {
+//                                DayOfWeek.valueOf(it.uppercase(Locale.ROOT))
+//                            } catch (e: IllegalArgumentException) { null }
+//                        } ?: emptyList()
+//
+//                        val today = LocalDate.now()
+//
+//                        if (selectedLocalDate.dayOfWeek in validDaysOfWeek && !selectedLocalDate.isBefore(today)) {
+//                            onDateSelected(selectedLocalDate)
+//                            showDatePicker = false
+//                        } else {
+//                            Toast.makeText(context, "Professor is not available on this day.", Toast.LENGTH_SHORT).show()
+//                        }
+//                    } ?: run {
+//                        Toast.makeText(context, "Please select a date.", Toast.LENGTH_SHORT).show()
+//                    }
+//                }) { Text("OK") }
+//            },
+//            dismissButton = {
+//                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+//            }
+//        ) {
+//            DatePicker(state = datePickerState)
+//        }
+//    }
+//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingDialog(
@@ -285,7 +412,9 @@ fun BookingDialog(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Date") },
-                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
                 )
 
                 ExposedDropdownMenuBox(
@@ -302,7 +431,9 @@ fun BookingDialog(
                         onValueChange = {},
                         label = { Text("Available Slots") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSlotDropdownExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = isSlotDropdownExpanded,
@@ -357,10 +488,18 @@ fun BookingDialog(
                         val selectedLocalDate = Instant.ofEpochMilli(dateInMillis)
                             .atZone(ZoneId.systemDefault()).toLocalDate()
 
-                        val validDaysOfWeek = uiState.officeHours?.daysOfWeek?.mapNotNull {
-                            try {
-                                DayOfWeek.valueOf(it.uppercase(Locale.ROOT))
-                            } catch (e: IllegalArgumentException) { null }
+                        // MODIFICATION: Correctly map 3-letter day strings to DayOfWeek enums.
+                        val validDaysOfWeek = uiState.officeHours?.daysOfWeek?.mapNotNull { dayString ->
+                            when (dayString.uppercase(Locale.ROOT)) {
+                                "MON" -> DayOfWeek.MONDAY
+                                "TUE" -> DayOfWeek.TUESDAY
+                                "WED" -> DayOfWeek.WEDNESDAY
+                                "THU" -> DayOfWeek.THURSDAY
+                                "FRI" -> DayOfWeek.FRIDAY
+                                "SAT" -> DayOfWeek.SATURDAY
+                                "SUN" -> DayOfWeek.SUNDAY
+                                else -> null
+                            }
                         } ?: emptyList()
 
                         val today = LocalDate.now()
