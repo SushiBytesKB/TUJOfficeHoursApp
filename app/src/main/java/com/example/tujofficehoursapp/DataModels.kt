@@ -29,3 +29,9 @@ data class Reservation(
     val note: String = "",
     val reservationId: String = UUID.randomUUID().toString()
 )
+
+data class Professor(
+    val uid: String = "",
+    val name: String = "",
+    val email: String = "",
+)
