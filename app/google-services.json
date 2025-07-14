@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1027163480838",
+    "project_id": "tuj-office-hours-app",
+    "storage_bucket": "tuj-office-hours-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1027163480838:android:2935d897229d47d0ae3487",
+        "android_client_info": {
+          "package_name": "com.example.tujofficehoursapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmp4YguLTHSBgMmsldTQ-vY-dDDQh6z28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
