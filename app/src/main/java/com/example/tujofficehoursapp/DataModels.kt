@@ -1,37 +1,27 @@
 package com.example.tujofficehoursapp
 
-import com.google.type.Date
-import com.google.type.DateTime
 import java.util.UUID
 
 data class User(
-    val uid: String = UUID.randomUUID().toString(),
-    val name: String = "",
+    val uid: String = "",
     val email: String = "",
     val role: String = "Student"
 )
 
-data class ProfessorOfficeHours(
-    val daysOfWeek: List<String> = emptyList(),
-    val startTime: DateTime,
-    val endTime: DateTime,
-    val slotDurationMinutes: Int = 10,
-    val professorId: String = "",
-    val location: String = ""
+data class Professor(
+    val uid: String = "",
+    val name: String = "Not Set",
+    val email: String = "",
+    val officeHours: String = "Not specified",
+    val classDetails: String = "Not specified"
 )
 
 data class Reservation(
+    val id: String = UUID.randomUUID().toString(),
     val professorId: String = "",
+    val professorName: String = "",
     val studentId: String = "",
-    val date: Date,
-    val startTime: DateTime,
-    val endTime: DateTime,
-    val note: String = "",
-    val reservationId: String = UUID.randomUUID().toString()
-)
-
-data class Professor(
-    val uid: String = "",
-    val name: String = "",
-    val email: String = "",
+    val studentName: String = "",
+    val preferredTime: String = "",
+    val note: String = ""
 )
