@@ -91,9 +91,10 @@ fun LoginScreen(
 
 @Composable
 fun SignUpScreen(
-    onSignUpClick: (String, String, String) -> Unit,
+    onSignUpClick: (String, String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Student") }
@@ -137,6 +138,14 @@ fun SignUpScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Full Name") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TempleRed, focusedLabelColor = TempleRed, cursorColor = TempleRed)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
@@ -156,7 +165,7 @@ fun SignUpScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = { onSignUpClick(email, password, selectedRole) },
+            onClick = { onSignUpClick(name, email, password, selectedRole) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = TempleRed)
         ) {

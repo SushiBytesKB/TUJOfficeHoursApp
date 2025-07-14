@@ -1,11 +1,16 @@
+// MyOfficeHours.kt
 package com.example.tujofficehoursapp
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,38 +22,69 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.ktx.Firebase
+import com.google.type.DateTime
+import com.google.type.TimeZone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class MyOfficeHoursViewModel : ViewModel() {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
     private val userId = auth.currentUser?.uid ?: ""
 
-    private val _professor = MutableStateFlow<Professor?>(null)
-    val professor = _professor.asStateFlow()
+    private val _officeHours = MutableStateFlow<ProfessorOfficeHours?>(null)
+    val officeHours = _officeHours.asStateFlow()
+    private val officeHoursDocRef = db.collection("professors").document(userId).collection("config").document("officeHours")
 
     init {
         viewModelScope.launch {
-            db.collection("professors").document(userId).get()
+            officeHoursDocRef.get()
                 .addOnSuccessListener { document ->
-                    _professor.value = document.toObject<Professor>()
+                    if (document.exists()) {
+                        _officeHours.value = document.toObject<ProfessorOfficeHours>()
+                    }
                 }
         }
     }
 
-    fun saveProfile(name: String, officeHours: String, classDetails: String, onComplete: () -> Unit) {
-        val updatedData = mapOf(
-            "name" to name,
-            "officeHours" to officeHours,
-            "classDetails" to classDetails
+    fun saveOfficeHours(
+        days: Set<String>,
+        startTime: LocalTime,
+        endTime: LocalTime,
+        duration: Int,
+        location: String,
+        onComplete: () -> Unit
+    ) {
+        val startDateTime = DateTime.newBuilder()
+            .setHours(startTime.hour)
+            .setMinutes(startTime.minute)
+            .setTimeZone(TimeZone.newBuilder().setId("Asia/Tokyo").build())
+            .build()
+
+        val endDateTime = DateTime.newBuilder()
+            .setHours(endTime.hour)
+            .setMinutes(endTime.minute)
+            .setTimeZone(TimeZone.newBuilder().setId("Asia/Tokyo").build())
+            .build()
+
+        val newOfficeHours = ProfessorOfficeHours(
+            daysOfWeek = days.toList().sorted(),
+            startTime = startDateTime,
+            endTime = endDateTime,
+            slotDurationMinutes = duration,
+            professorId = userId,
+            location = location
         )
-        db.collection("professors").document(userId).update(updatedData)
+
+        officeHoursDocRef.set(newOfficeHours)
             .addOnSuccessListener { onComplete() }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyOfficeHoursScreen(
     onNavigateToReservations: () -> Unit,
@@ -56,30 +92,49 @@ fun MyOfficeHoursScreen(
     modifier: Modifier = Modifier,
     viewModel: MyOfficeHoursViewModel = viewModel()
 ) {
-    val professor by viewModel.professor.collectAsState()
+    val officeHours by viewModel.officeHours.collectAsState()
     val context = LocalContext.current
 
-    var name by remember { mutableStateOf("") }
-    var officeHours by remember { mutableStateOf("") }
-    var classDetails by remember { mutableStateOf("") }
+    var selectedDays by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var startTime by remember { mutableStateOf<LocalTime?>(null) }
+    var endTime by remember { mutableStateOf<LocalTime?>(null) }
+    var slotDuration by remember { mutableStateOf("10") }
+    var location by remember { mutableStateOf("") }
 
-    LaunchedEffect(professor) {
-        professor?.let {
-            name = it.name
-            officeHours = it.officeHours
-            classDetails = it.classDetails
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
+    LaunchedEffect(officeHours) {
+        officeHours?.let {
+            selectedDays = it.daysOfWeek.toSet()
+            // Handle nullable start/end times from the data model
+            it.startTime?.let { st -> startTime = LocalTime.of(st.hours, st.minutes) }
+            it.endTime?.let { et -> endTime = LocalTime.of(et.hours, et.minutes) }
+            slotDuration = it.slotDurationMinutes.toString()
+            location = it.location
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Scaffold(
+        bottomBar = {
+            ProfessorBottomNavBar(
+                currentRoute = "professor_office_hours",
+                onNavigateToReservations = onNavigateToReservations,
+                onNavigateToOfficeHours = { /* Already here */ },
+                onNavigateToSettings = onNavigateToSettings
+            )
+        }
+    ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(16.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "My Public Profile",
+                text = "Set My Office Hours",
                 style = Typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = TempleRed,
@@ -87,33 +142,68 @@ fun MyOfficeHoursScreen(
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
+            SectionTitle("Available Days")
+            DaySelector(selectedDays = selectedDays, onDaySelected = { day ->
+                selectedDays = if (selectedDays.contains(day)) {
+                    selectedDays - day
+                } else {
+                    selectedDays + day
+                }
+            })
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SectionTitle("Available Time Range")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TimePickerField(
+                    label = "Start Time",
+                    time = startTime,
+                    onClick = { showStartTimePicker = true },
+                    modifier = Modifier.weight(1f)
+                )
+                TimePickerField(
+                    label = "End Time",
+                    time = endTime,
+                    onClick = { showEndTimePicker = true },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SectionTitle("Appointment Details")
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Your Name") },
+                value = slotDuration,
+                onValueChange = { slotDuration = it.filter { char -> char.isDigit() } },
+                label = { Text("Slot Duration (minutes)") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
-                value = classDetails,
-                onValueChange = { classDetails = it },
-                label = { Text("Class Details (e.g., CST-333)") },
+                value = location,
+                onValueChange = { location = it },
+                label = { Text("Location (e.g., Office 503)") },
                 modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = officeHours,
-                onValueChange = { officeHours = it },
-                label = { Text("Office Hours (e.g., M/W 10am-12pm)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
             )
             Spacer(modifier = Modifier.height(32.dp))
+
             Button(
                 onClick = {
-                    viewModel.saveProfile(name, officeHours, classDetails) {
-                        Toast.makeText(context, "Profile Updated!", Toast.LENGTH_SHORT).show()
+                    if (startTime != null && endTime != null && selectedDays.isNotEmpty()) {
+                        viewModel.saveOfficeHours(
+                            days = selectedDays,
+                            startTime = startTime!!,
+                            endTime = endTime!!,
+                            duration = slotDuration.toIntOrNull() ?: 10,
+                            location = location
+                        ) {
+                            Toast.makeText(context, "Office Hours Updated!", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "Please fill all fields.", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -122,12 +212,102 @@ fun MyOfficeHoursScreen(
                 Text("Save Changes", modifier = Modifier.padding(8.dp))
             }
         }
+    }
 
-        ProfessorBottomNavBar(
-            currentRoute = "professor_office_hours",
-            onNavigateToReservations = onNavigateToReservations,
-            onNavigateToOfficeHours = { /* Already here */ },
-            onNavigateToSettings = onNavigateToSettings
+    if (showStartTimePicker) {
+        TimePickerDialog(
+            onDismissRequest = { showStartTimePicker = false },
+            onTimeSelected = { startTime = it }
         )
     }
+
+    if (showEndTimePicker) {
+        TimePickerDialog(
+            onDismissRequest = { showEndTimePicker = false },
+            onTimeSelected = { endTime = it }
+        )
+    }
+}
+
+@Composable
+private fun DaySelector(selectedDays: Set<String>, onDaySelected: (String) -> Unit) {
+    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
+        days.forEach { day ->
+            FilterChip(
+                selected = selectedDays.contains(day),
+                onClick = { onDaySelected(day) },
+                label = { Text(day) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = AccentColor,
+                    selectedLabelColor = Color.White
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimePickerField(
+    label: String,
+    time: LocalTime?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val formatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    OutlinedTextField(
+        value = time?.format(formatter) ?: "",
+        onValueChange = {},
+        label = { Text(label) },
+        readOnly = true,
+        modifier = modifier.clickable(onClick = onClick)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(onDismissRequest: () -> Unit, onTimeSelected: (LocalTime) -> Unit) {
+    val timePickerState = rememberTimePickerState()
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = NeutralColor
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                TimePicker(state = timePickerState)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row {
+                    TextButton(onClick = onDismissRequest) { Text("Cancel") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        onTimeSelected(LocalTime.of(timePickerState.hour, timePickerState.minute))
+                        onDismissRequest()
+                    }) {
+                        Text("OK")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+    )
 }
