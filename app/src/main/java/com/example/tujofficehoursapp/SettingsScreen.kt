@@ -1,6 +1,8 @@
 package com.example.tujofficehoursapp
 
 import android.app.Application
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -20,6 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.tujofficehoursapp.ui.theme.*
@@ -66,60 +70,97 @@ fun SettingsScreen(
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Settings",
-                style = Typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TempleRed,
-                fontFamily = TujFont,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
+    Box(modifier = Modifier.fillMaxSize())
+    {
+        Image(
+            painter = painterResource(id = R.drawable.backgroundsupertransparent), // <-- Change this to your file name
+            contentDescription = null, // for decorative images
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop)
 
-            SectionHeader(title = "Time & Region")
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NeutralColor),
-                modifier = Modifier.fillMaxWidth()
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
             ) {
-                Column {
-                    SettingItem(label = "Time Zone") {
-                        ExposedDropdownMenuBox(
-                            expanded = isDropdownExpanded,
-                            onExpandedChange = { isDropdownExpanded = !isDropdownExpanded },
-                        ) {
-                            OutlinedTextField(
-                                readOnly = true,
-                                value = settings?.timezone ?: "JST",
-                                onValueChange = {},
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
-                                modifier = Modifier.menuAnchor()
-                            )
-                            ExposedDropdownMenu(
+                Text(
+                    text = "Settings",
+                    style = Typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TempleRed,
+                    fontFamily = TujFont,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+
+                SectionHeader(title = "Time & Region")
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = NeutralColor),
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Column {
+                        SettingItem(label = "Time Zone") {
+                            ExposedDropdownMenuBox(
                                 expanded = isDropdownExpanded,
-                                onDismissRequest = { isDropdownExpanded = false },
+                                onExpandedChange = { isDropdownExpanded = !isDropdownExpanded },
                             ) {
-                                timeZoneOptions.forEach { zone ->
-                                    DropdownMenuItem(
-                                        text = { Text(zone) },
-                                        onClick = {
-                                            viewModel.updateTimezone(zone)
-                                            isDropdownExpanded = false
-                                        }
-                                    )
+                                OutlinedTextField(
+                                    readOnly = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.White,
+                                        unfocusedContainerColor = NeutralColor,
+                                        focusedIndicatorColor = AccentColor),
+                                    value = settings?.timezone ?: "JST",
+                                    onValueChange = {},
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                                    modifier = Modifier.menuAnchor()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = isDropdownExpanded,
+                                    onDismissRequest = { isDropdownExpanded = false },
+                                    modifier = Modifier.background(Color.White)
+                                ) {
+                                    timeZoneOptions.forEach { zone ->
+                                        DropdownMenuItem(
+                                            text = { Text(zone) },
+                                            onClick = {
+                                                viewModel.updateTimezone(zone)
+                                                isDropdownExpanded = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
+                        Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingItem(label = "Use 24-hour format") {
+                            Switch(
+                                checked = settings?.is24Hour ?: true,
+                                onCheckedChange = { viewModel.updateIs24Hour(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = TempleRed
+                                )
+                            )
+                        }
                     }
-                    Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                    SettingItem(label = "Use 24-hour format") {
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SectionHeader(title = "Notifications")
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = NeutralColor),
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    SettingItem(label = "Enable Notifications") {
                         Switch(
-                            checked = settings?.is24Hour ?: true,
-                            onCheckedChange = { viewModel.updateIs24Hour(it) },
+                            checked = notificationsEnabled,
+                            onCheckedChange = { notificationsEnabled = it }, // Changes UI state only
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = TempleRed
@@ -127,56 +168,37 @@ fun SettingsScreen(
                         )
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-            SectionHeader(title = "Notifications")
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NeutralColor),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SettingItem(label = "Enable Notifications") {
-                    Switch(
-                        checked = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }, // Changes UI state only
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = TempleRed
-                        )
-                    )
+                Button(
+                    onClick = onLogout,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text("Logout")
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = onLogout,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Logout")
+            if (userRole == "Student") {
+                StudentBottomNavBar(
+                    currentRoute = "settings",
+                    onNavigateToReservations = onNavigateToReservations,
+                    onNavigateToProfessors = onNavigateToProfessors,
+                    onNavigateToSettings = { /* Already here */ }
+                )
+            } else {
+                ProfessorBottomNavBar(
+                    currentRoute = "settings",
+                    onNavigateToReservations = onNavigateToReservations,
+                    onNavigateToOfficeHours = onNavigateToOfficeHours,
+                    onNavigateToSettings = { /* Already here */ }
+                )
             }
-        }
-
-        if (userRole == "Student") {
-            StudentBottomNavBar(
-                currentRoute = "settings",
-                onNavigateToReservations = onNavigateToReservations,
-                onNavigateToProfessors = onNavigateToProfessors,
-                onNavigateToSettings = { /* Already here */ }
-            )
-        } else {
-            ProfessorBottomNavBar(
-                currentRoute = "settings",
-                onNavigateToReservations = onNavigateToReservations,
-                onNavigateToOfficeHours = onNavigateToOfficeHours,
-                onNavigateToSettings = { /* Already here */ }
-            )
         }
     }
 }

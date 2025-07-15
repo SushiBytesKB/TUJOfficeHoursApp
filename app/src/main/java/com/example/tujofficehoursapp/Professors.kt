@@ -3,6 +3,7 @@ package com.example.tujofficehoursapp
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -492,6 +493,7 @@ fun BookingDialog(
                     ExposedDropdownMenu(
                         expanded = isSlotDropdownExpanded,
                         onDismissRequest = { isSlotDropdownExpanded = false },
+                        modifier = Modifier.background(Color.White)
                     ) {
                         if (uiState.isLoadingSlots) {
                             DropdownMenuItem(text = { Text("Loading...") }, onClick = {})
