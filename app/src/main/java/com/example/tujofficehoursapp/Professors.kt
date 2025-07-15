@@ -225,6 +225,7 @@ fun ProfessorsScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(uiState.professors) { professorInfo ->
                         ProfessorCard(
