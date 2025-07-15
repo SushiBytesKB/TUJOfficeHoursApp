@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.compose")
+    // KSP plugin should be referenced using its ID
     id("com.google.devtools.ksp")
 }
 
@@ -49,8 +50,9 @@ android {
     }
     packaging {
         resources {
-            // This is a good practice to keep, as it resolves other potential conflicts.
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // The 'pickFirsts' rule for protobuf is often needed with Firebase/gRPC libraries.
+            // It's good to keep it to prevent potential build conflicts.
             pickFirsts += "google/protobuf/*.proto"
         }
     }
@@ -75,17 +77,20 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // Firebase Bill of Materials (BOM)
+    // CORRECTION: Only one BOM should be declared. This manages all Firebase library versions.
     implementation(platform(libs.firebase.bom))
+
+    // Firebase Libraries (versions are now managed by the single BOM above)
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics")
     implementation(libs.kotlinx.coroutines.play.services)
 
     // Room Database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
-    // The problematic google.type dependency has been removed.
 
     // Testing
     testImplementation(libs.junit)
@@ -96,10 +101,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
-    implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-analytics")
+    // REMOVED: These conflicting BOM declarations have been removed.
+    // implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
+    // implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
 }
