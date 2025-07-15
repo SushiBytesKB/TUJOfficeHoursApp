@@ -335,6 +335,7 @@ fun BookingDialog(
     )
 
     AlertDialog(
+        containerColor = Color.White,
         onDismissRequest = onDismiss,
         title = { Text("Book with ${uiState.selectedProfessor?.professor?.name}") },
         text = {
@@ -343,6 +344,12 @@ fun BookingDialog(
                     value = uiState.selectedDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "Select a date",
                     onValueChange = {},
                     readOnly = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedLabelColor = AccentColor
+                    ),
                     label = { Text("Date") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -362,6 +369,12 @@ fun BookingDialog(
                         value = selectedSlot?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Select a time slot",
                         onValueChange = {},
                         label = { Text("Available Slots") },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = AccentColor,
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            focusedLabelColor = AccentColor
+                        ),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSlotDropdownExpanded) },
                         modifier = Modifier
                             .menuAnchor()
@@ -395,12 +408,19 @@ fun BookingDialog(
                     value = note,
                     onValueChange = { note = it },
                     label = { Text("Note for professor (optional)") },
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedLabelColor = AccentColor,
+                        cursorColor = TempleRed
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = NewButtonColor),
                 onClick = {
                     selectedSlot?.let { onConfirmBooking(it, note) }
                 },
@@ -408,7 +428,8 @@ fun BookingDialog(
             ) { Text("Book Now") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("Cancel") }
         }
     )
 
@@ -445,13 +466,25 @@ fun BookingDialog(
                     } ?: run {
                         Toast.makeText(context, "Please select a date.", Toast.LENGTH_SHORT).show()
                     }
-                }) { Text("OK") }
+                }, colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            }
+                TextButton(onClick = { showDatePicker = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("Cancel") }
+            },
+            colors = DatePickerDefaults.colors(containerColor = NeutralColor)
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = NeutralColor,
+                    selectedDayContainerColor = TempleRed,
+                    selectedDayContentColor = Color.White,
+                    todayContentColor = TempleRed,
+                    todayDateBorderColor = TempleRed,
+                    selectedYearContainerColor = TempleRed,
+                    selectedYearContentColor = Color.White,
+                    dateTextFieldColors = TextFieldDefaults.textFieldColors(focusedLabelColor = AccentColor, containerColor = NeutralColor, cursorColor = TempleRed, focusedIndicatorColor = AccentColor)
+                ))
         }
     }
 }
