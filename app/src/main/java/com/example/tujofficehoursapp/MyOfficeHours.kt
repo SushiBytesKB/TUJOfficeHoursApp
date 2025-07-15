@@ -188,8 +188,8 @@ fun MyOfficeHoursScreen(
                         focusedIndicatorColor = AccentColor,
                         focusedLabelColor = AccentColor,
                         unfocusedLabelColor = Color.Black,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = DirtyWhite,
+                        unfocusedContainerColor = DirtyWhite,
                         cursorColor = TempleRed)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -202,8 +202,8 @@ fun MyOfficeHoursScreen(
                         focusedIndicatorColor = AccentColor,
                         focusedLabelColor = AccentColor,
                         unfocusedLabelColor = Color.Black,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = DirtyWhite,
+                        unfocusedContainerColor = DirtyWhite,
                         cursorColor = TempleRed)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
@@ -286,8 +286,8 @@ private fun TimePickerField(
         modifier = modifier.clickable(onClick = onClick),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = AccentColor,
-            unfocusedContainerColor = Color.White,
-            focusedContainerColor = Color.White,
+            unfocusedContainerColor = DirtyWhite,
+            focusedContainerColor = DirtyWhite,
             focusedLabelColor = AccentColor,
             unfocusedLabelColor = Color.Black)
     )
