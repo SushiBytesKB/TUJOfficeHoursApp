@@ -109,9 +109,7 @@ fun ReservedScreen(
             contentScale = ContentScale.Crop)
 
         Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
