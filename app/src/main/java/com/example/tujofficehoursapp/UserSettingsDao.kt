@@ -1,4 +1,3 @@
-// UserSettingsDao.kt
 package com.example.tujofficehoursapp.data
 
 import androidx.room.Dao
@@ -6,7 +5,7 @@ import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
-// MODIFICATION: New DAO for interacting with the UserSettings table
+// new DAO for interacting with the UserSettings table
 @Dao
 interface UserSettingsDao {
     @Upsert // Inserts if new, updates if it exists

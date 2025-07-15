@@ -1,12 +1,7 @@
-# gradle/libs.versions.toml
-# This file defines the dependencies and their versions for the project.
-
 [versions]
 androidApplication = "8.4.1"
 kotlinAndroid = "2.0.0"
-# CORRECTED: The Kotlin Compose plugin version must match the Kotlin version.
 kotlinCompose = "2.0.0"
-# ADDED: The Compose Compiler version compatible with Kotlin 2.0.0
 composeCompiler = "1.5.14"
 coreKtx = "1.13.1"
 lifecycleRuntimeKtx = "2.8.1"
@@ -16,7 +11,7 @@ navigationCompose = "2.7.7"
 lifecycleViewmodelCompose = "2.8.1"
 room = "2.6.1"
 firebaseBom = "33.1.1"
-googleType = "2.3.0" # Updated to a more standard version
+googleType = "2.3.0"
 coroutinesPlayServices = "1.8.1"
 junit = "4.13.2"
 androidxJunit = "1.1.5"
@@ -67,5 +62,4 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidApplication" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinAndroid" }
-# CORRECTED: This now points to the correct, matching Kotlin version.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlinCompose" }

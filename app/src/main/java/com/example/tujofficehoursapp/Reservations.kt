@@ -1,4 +1,3 @@
-// Reservations.kt
 package com.example.tujofficehoursapp
 
 import android.app.Application
@@ -49,9 +48,9 @@ class ReservationsViewModel(settingsRepository: SettingsRepository) : ViewModel(
     private val userId = auth.currentUser?.uid ?: ""
 
     val uiState: StateFlow<ReservationsUiState> = combine(
-        // CORRECTION: Added .catch operator to handle potential Firestore index errors gracefully.
+        // .catch operator to handle potential Firestore index errors
         getReservationsFlow().catch { exception ->
-            // This will log the error in Logcat without crashing the app.
+            // log the error in Logcat without crashing the app.
             Log.e("ReservationsViewModel", "Error fetching reservations, index likely missing.", exception)
             // Emit an empty list so the UI can still display something.
             emit(emptyList())

@@ -1,4 +1,3 @@
-// MyOfficeHours.kt
 package com.example.tujofficehoursapp
 
 import android.widget.Toast
@@ -52,8 +51,7 @@ class MyOfficeHoursViewModel : ViewModel() {
         }
     }
 
-    // MODIFICATION: This function now works with LocalTime from the UI
-    // and saves times as "HH:mm" strings.
+    // works with LocalTime from the UI and saves times as "HH:mm" strings.
     fun saveOfficeHours(
         days: Set<String>,
         startTime: LocalTime,
@@ -98,7 +96,7 @@ fun MyOfficeHoursScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    // MODIFICATION: This now correctly parses the time string from the data model.
+    // parses the time string from the data model.
     LaunchedEffect(officeHours) {
         officeHours?.let {
             selectedDays = it.daysOfWeek.toSet()
@@ -124,8 +122,8 @@ fun MyOfficeHoursScreen(
         Box(modifier = modifier.fillMaxSize())
         {
             Image(
-                painter = painterResource(id = R.drawable.backgroundnew), // <-- Change this to your file name
-                contentDescription = null, // for decorative images
+                painter = painterResource(id = R.drawable.backgroundnew),
+                contentDescription = null, // for background
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop)
 

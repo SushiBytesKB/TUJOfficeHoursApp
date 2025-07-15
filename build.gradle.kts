@@ -1,6 +1,3 @@
-// build.gradle.kts (Project-level)
-// Registers the plugins required for the entire project.
-
 plugins {
     // The Android Application plugin, applied to sub-projects, not here.
     alias(libs.plugins.android.application) apply false

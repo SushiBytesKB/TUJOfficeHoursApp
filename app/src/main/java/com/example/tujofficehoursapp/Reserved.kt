@@ -48,7 +48,7 @@ class ReservedViewModel(settingsRepository: SettingsRepository) : ViewModel() {
     private val userId = auth.currentUser?.uid ?: ""
 
     val uiState: StateFlow<ReservedUiState> = combine(
-        // CORRECTION: Added .catch operator to handle potential Firestore index errors gracefully.
+        // .catch operator to handle potential Firestore index errors
         getBookingsFlow().catch { exception ->
             Log.e("ReservedViewModel", "Error fetching bookings, index likely missing.", exception)
             emit(emptyList())

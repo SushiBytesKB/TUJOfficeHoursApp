@@ -1,4 +1,3 @@
-// AppDatabase.kt
 package com.example.tujofficehoursapp.data
 
 import android.content.Context
@@ -6,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-// MODIFICATION: New Room Database class definition
+// define new room database
 @Database(entities = [UserSettings::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userSettingsDao(): UserSettingsDao

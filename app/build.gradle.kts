@@ -1,5 +1,3 @@
-// app/build.gradle.kts (Module-level)
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -77,7 +75,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // Firebase Bill of Materials (BOM)
-    // CORRECTION: Only one BOM should be declared. This manages all Firebase library versions.
+
     implementation(platform(libs.firebase.bom))
 
     // Firebase Libraries (versions are now managed by the single BOM above)
@@ -100,8 +98,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-    // REMOVED: These conflicting BOM declarations have been removed.
-    // implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
-    // implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
 }

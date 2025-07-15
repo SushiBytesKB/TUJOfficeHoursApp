@@ -1,4 +1,3 @@
-// Professors.kt
 package com.example.tujofficehoursapp
 
 import android.widget.Toast
@@ -492,8 +491,12 @@ fun BookingDialog(
                     todayDateBorderColor = TempleRed,
                     selectedYearContainerColor = TempleRed,
                     selectedYearContentColor = Color.White,
-                    dateTextFieldColors = TextFieldDefaults.textFieldColors(focusedLabelColor = AccentColor, containerColor = NeutralColor, cursorColor = TempleRed, focusedIndicatorColor = AccentColor)
-                ))
+                    dateTextFieldColors = TextFieldDefaults.textFieldColors(
+                        focusedLabelColor = AccentColor,
+                        containerColor = NeutralColor,
+                        cursorColor = TempleRed,
+                        focusedIndicatorColor = AccentColor))
+            )
         }
     }
 }

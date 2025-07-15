@@ -73,7 +73,7 @@ fun SettingsScreen(
     Box(modifier = Modifier.fillMaxSize())
     {
         Image(
-            painter = painterResource(id = R.drawable.backgroundsupertransparent), // <-- Change this to your file name
+            painter = painterResource(id = R.drawable.backgroundsupertransparent),
             contentDescription = null, // for decorative images
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop)
