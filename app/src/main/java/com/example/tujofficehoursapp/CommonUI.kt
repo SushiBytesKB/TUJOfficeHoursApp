@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.tujofficehoursapp.data.UserSettings
 import com.example.tujofficehoursapp.ui.theme.*
@@ -130,10 +132,11 @@ fun ReservationInfoCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(text = title, style = Typography.titleLarge, color = TextColor)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = TempleRed)
             ReservationDetailRow(label = "Date:", value = dayAndDate)
             ReservationDetailRow(label = "Time:", value = time)
             if (reservation.note.isNotBlank()) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp).padding(top = 7.dp), color = TextColor, thickness = Dp.Hairline)
                 ReservationDetailRow(label = "Note:", value = reservation.note)
             }
         }

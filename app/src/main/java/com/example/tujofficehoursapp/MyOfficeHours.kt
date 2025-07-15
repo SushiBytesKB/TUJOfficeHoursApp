@@ -259,8 +259,9 @@ private fun DaySelector(selectedDays: Set<String>, onDaySelected: (String) -> Un
             FilterChip(
                 selected = selectedDays.contains(day),
                 onClick = { onDaySelected(day) },
-                label = { Text(text = day, softWrap = false, fontSize = 12.sp) },
+                label = { Text(text = day, softWrap = false, fontSize = 12.sp, fontWeight = FontWeight.Bold) },
                 colors = FilterChipDefaults.filterChipColors(
+                    containerColor = NeutralColor,
                     selectedContainerColor = AccentColor,
                     selectedLabelColor = Color.White
                 )
