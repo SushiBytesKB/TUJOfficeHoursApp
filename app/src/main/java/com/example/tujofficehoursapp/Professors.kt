@@ -3,6 +3,7 @@ package com.example.tujofficehoursapp
 
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,7 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -187,40 +190,50 @@ fun ProfessorsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
+    Box(modifier = modifier.fillMaxSize())
+    {
+        Image(
+            painter = painterResource(id = R.drawable.backgroundnew), // <-- Change this to your file name
+            contentDescription = null, // for decorative images
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop)
+
         Column(
-            modifier = Modifier.weight(1f).padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = modifier.fillMaxSize()
         ) {
-            Text(
-                text = "List of Professors",
-                style = Typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TempleRed,
-                fontFamily = TujFont,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+            Column(
+                modifier = Modifier.weight(1f).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                items(uiState.professors) { professor ->
-                    ProfessorCard(
-                        professor = professor,
-                        onClick = { viewModel.onProfessorSelected(professor) }
-                    )
+                Text(
+                    text = "List of Professors",
+                    style = Typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TempleRed,
+                    fontFamily = TujFont,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(uiState.professors) { professor ->
+                        ProfessorCard(
+                            professor = professor,
+                            onClick = { viewModel.onProfessorSelected(professor) }
+                        )
+                    }
                 }
             }
+            StudentBottomNavBar(
+                currentRoute = "student_professors",
+                onNavigateToReservations = onNavigateToReservations,
+                onNavigateToProfessors = { /* Already here */ },
+                onNavigateToSettings = onNavigateToSettings
+            )
         }
-        StudentBottomNavBar(
-            currentRoute = "student_professors",
-            onNavigateToReservations = onNavigateToReservations,
-            onNavigateToProfessors = { /* Already here */ },
-            onNavigateToSettings = onNavigateToSettings
-        )
     }
+
 
     if (uiState.showBookingDialog) {
         BookingDialog(
@@ -251,6 +264,7 @@ fun ProfessorCard(professor: Professor, onClick: () -> Unit, modifier: Modifier 
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(text = professor.name, style = Typography.titleLarge, color = TextColor)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(text = professor.email, style = Typography.bodyMedium, color = TextColor.copy(alpha = 0.7f))
         }
     }

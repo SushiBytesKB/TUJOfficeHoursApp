@@ -2,6 +2,7 @@
 package com.example.tujofficehoursapp
 
 import android.app.Application
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,7 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -101,46 +104,55 @@ fun ReservationsScreen(
     // MODIFICATION: Collect the combined UI state.
     val uiState by viewModel.uiState.collectAsState()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.weight(1f).padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "My Reservations",
-                style = Typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TempleRed,
-                fontFamily = TujFont,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+    Box(modifier = modifier.fillMaxSize())
+    {
+        Image(
+            painter = painterResource(id = R.drawable.backgroundnew), // <-- Change this to your file name
+            contentDescription = null, // for decorative images
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop)
 
-            if (uiState.reservations.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("You have no upcoming reservations.", color = TextColor.copy(alpha = 0.7f))
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(uiState.reservations) { reservation ->
-                        // MODIFICATION: Pass the reservation and settings to the card for correct formatting.
-                        ReservationInfoCard(
-                            reservation = reservation,
-                            settings = uiState.settings
-                        )
+        Column(modifier = modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.weight(1f).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "My Reservations",
+                    style = Typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TempleRed,
+                    fontFamily = TujFont,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                if (uiState.reservations.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("You have no upcoming reservations.", color = TextColor.copy(alpha = 0.7f))
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(uiState.reservations) { reservation ->
+                            // MODIFICATION: Pass the reservation and settings to the card for correct formatting.
+                            ReservationInfoCard(
+                                reservation = reservation,
+                                settings = uiState.settings
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        StudentBottomNavBar(
-            currentRoute = "student_reservations",
-            onNavigateToReservations = { /* Already here */ },
-            onNavigateToProfessors = onNavigateToProfessors,
-            onNavigateToSettings = onNavigateToSettings
-        )
+            StudentBottomNavBar(
+                currentRoute = "student_reservations",
+                onNavigateToReservations = { /* Already here */ },
+                onNavigateToProfessors = onNavigateToProfessors,
+                onNavigateToSettings = onNavigateToSettings
+            )
+        }
     }
 }
 

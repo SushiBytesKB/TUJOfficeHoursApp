@@ -2,6 +2,7 @@
 package com.example.tujofficehoursapp
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,9 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -116,91 +120,115 @@ fun MyOfficeHoursScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Set My Office Hours",
-                style = Typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = TempleRed,
-                fontFamily = TujFont,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
 
-            SectionTitle("Available Days")
-            DaySelector(selectedDays = selectedDays, onDaySelected = { day ->
-                selectedDays = if (selectedDays.contains(day)) {
-                    selectedDays - day
-                } else {
-                    selectedDays + day
-                }
-            })
+        Box(modifier = modifier.fillMaxSize())
+        {
+            Image(
+                painter = painterResource(id = R.drawable.backgroundnew), // <-- Change this to your file name
+                contentDescription = null, // for decorative images
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop)
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SectionTitle("Available Time Range")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TimePickerField(
-                    label = "Start Time",
-                    time = startTime,
-                    onClick = { showStartTimePicker = true },
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = "Set My Office Hours",
+                    style = Typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TempleRed,
+                    fontFamily = TujFont,
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
-                TimePickerField(
-                    label = "End Time",
-                    time = endTime,
-                    onClick = { showEndTimePicker = true },
-                    modifier = Modifier.weight(1f)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SectionTitle("Appointment Details")
-            OutlinedTextField(
-                value = slotDuration,
-                onValueChange = { slotDuration = it.filter { char -> char.isDigit() } },
-                label = { Text("Slot Duration (minutes)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Location (e.g., Office 503)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    if (startTime != null && endTime != null && selectedDays.isNotEmpty()) {
-                        viewModel.saveOfficeHours(
-                            days = selectedDays,
-                            startTime = startTime!!,
-                            endTime = endTime!!,
-                            duration = slotDuration.toIntOrNull() ?: 10,
-                            location = location
-                        ) {
-                            Toast.makeText(context, "Office Hours Updated!", Toast.LENGTH_SHORT).show()
-                        }
+                SectionTitle("Available Days")
+                DaySelector(selectedDays = selectedDays, onDaySelected = { day ->
+                    selectedDays = if (selectedDays.contains(day)) {
+                        selectedDays - day
                     } else {
-                        Toast.makeText(context, "Please fill all fields.", Toast.LENGTH_SHORT).show()
+                        selectedDays + day
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = TempleRed)
-            ) {
-                Text("Save Changes", modifier = Modifier.padding(8.dp))
+                })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SectionTitle("Available Time Range")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TimePickerField(
+                        label = "Start Time",
+                        time = startTime,
+                        onClick = { showStartTimePicker = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TimePickerField(
+                        label = "End Time",
+                        time = endTime,
+                        onClick = { showEndTimePicker = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SectionTitle("Appointment Details")
+                OutlinedTextField(
+                    value = slotDuration,
+                    onValueChange = { slotDuration = it.filter { char -> char.isDigit() } },
+                    label = { Text("Slot Duration (minutes)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        focusedLabelColor = AccentColor,
+                        unfocusedLabelColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        cursorColor = TempleRed)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Location (e.g., Office 503)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        focusedLabelColor = AccentColor,
+                        unfocusedLabelColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        cursorColor = TempleRed)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        if (startTime != null && endTime != null && selectedDays.isNotEmpty()) {
+                            viewModel.saveOfficeHours(
+                                days = selectedDays,
+                                startTime = startTime!!,
+                                endTime = endTime!!,
+                                duration = slotDuration.toIntOrNull() ?: 10,
+                                location = location
+                            ) {
+                                Toast.makeText(context, "Office Hours Updated!", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Please fill all fields.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = NewButtonColor)
+                ) {
+                    Text("Save Changes", modifier = Modifier.padding(8.dp))
+                }
             }
         }
     }
@@ -231,7 +259,7 @@ private fun DaySelector(selectedDays: Set<String>, onDaySelected: (String) -> Un
             FilterChip(
                 selected = selectedDays.contains(day),
                 onClick = { onDaySelected(day) },
-                label = { Text(day) },
+                label = { Text(text = day, softWrap = false, fontSize = 12.sp) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = AccentColor,
                     selectedLabelColor = Color.White
@@ -252,9 +280,15 @@ private fun TimePickerField(
     OutlinedTextField(
         value = time?.format(formatter) ?: "",
         onValueChange = {},
-        label = { Text(label) },
+        label = { Text(label)},
         readOnly = true,
-        modifier = modifier.clickable(onClick = onClick)
+        modifier = modifier.clickable(onClick = onClick),
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = AccentColor,
+            unfocusedContainerColor = Color.White,
+            focusedContainerColor = Color.White,
+            focusedLabelColor = AccentColor,
+            unfocusedLabelColor = Color.Black)
     )
 }
 
@@ -274,12 +308,24 @@ private fun TimePickerDialog(onDismissRequest: () -> Unit, onTimeSelected: (Loca
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(16.dp)
             ) {
-                TimePicker(state = timePickerState)
+                TimePicker(state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = Color.White,
+                        selectorColor = TempleRed,
+                        containerColor = Color.White,
+                        periodSelectorSelectedContainerColor = TransparentAccentColor,
+                        periodSelectorSelectedContentColor = TempleRed,
+                        timeSelectorSelectedContainerColor = TransparentAccentColor,
+                        timeSelectorSelectedContentColor = TempleRed,
+                        timeSelectorUnselectedContainerColor = Color.White
+                    ))
                 Spacer(modifier = Modifier.height(16.dp))
                 Row {
-                    TextButton(onClick = onDismissRequest) { Text("Cancel") }
+                    TextButton(onClick = onDismissRequest,
+                        colors = ButtonDefaults.buttonColors(contentColor = NewButtonColor, containerColor = Color.Transparent)) { Text("Cancel") }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
+                    Button(colors = ButtonDefaults.buttonColors(containerColor = NewButtonColor),
+                        onClick = {
                         onTimeSelected(LocalTime.of(timePickerState.hour, timePickerState.minute))
                         onDismissRequest()
                     }) {
