@@ -66,7 +66,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(LocalContext.current.applicationContext as Application))
 ) {
     val settings by viewModel.settingsState.collectAsState()
-    val timeZoneOptions = listOf("Asia/Tokyo", "America/New_York", "GMT+2")
+    val timeZoneOptions = listOf("Tokyo (JST)", "Philadelphia (GMT-4)", "Austria (GMT+2)")
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
 

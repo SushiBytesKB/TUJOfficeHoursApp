@@ -260,6 +260,13 @@ fun ProfessorsScreen(
     }
 }
 
+private fun sortDaysOfWeek(days: List<String>): List<String> {
+    val dayOrder = mapOf(
+        "MON" to 1, "TUE" to 2, "WED" to 3, "THU" to 4, "FRI" to 5, "SAT" to 6, "SUN" to 7
+    )
+    return days.sortedBy { dayOrder[it.uppercase(Locale.ROOT)] ?: 8 }
+}
+
 @Composable
 fun ProfessorCard(professorInfo: ProfessorWithOfficeHours, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
@@ -297,10 +304,11 @@ fun ProfessorCard(professorInfo: ProfessorWithOfficeHours, onClick: () -> Unit, 
             val officeHours = professorInfo.officeHours
             if (officeHours != null) {
                 if (officeHours.daysOfWeek.isNotEmpty()) {
-                    ReservationDetailRow("Days:", officeHours.daysOfWeek.joinToString(", "))
+                    val sortedDays = sortDaysOfWeek(officeHours.daysOfWeek)
+                    ReservationDetailRow("Days:", sortedDays.joinToString(", "))
                 }
 
-                ReservationDetailRow("Times:", "${officeHours.startTime} - ${officeHours.endTime}")
+                ReservationDetailRow("Times:", "${officeHours.startTime} - ${officeHours.endTime} (JST)")
 
                 if (officeHours.location.isNotBlank()) {
                     ReservationDetailRow("Place:", officeHours.location)

@@ -157,7 +157,7 @@ fun MyOfficeHoursScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                SectionTitle("Available Time Range")
+                SectionTitle("Available Time Range (JST)")
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
