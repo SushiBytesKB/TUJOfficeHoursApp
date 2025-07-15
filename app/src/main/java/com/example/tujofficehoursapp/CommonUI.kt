@@ -116,7 +116,7 @@ fun ReservationInfoCard(
     val title = if (isProfessorView) {
         reservation.studentName
     } else {
-        "vs. ${reservation.professorName}"
+        "with ${reservation.professorName}"
     }
 
     Card(
