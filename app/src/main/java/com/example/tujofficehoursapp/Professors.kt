@@ -1,22 +1,28 @@
 // Professors.kt
 package com.example.tujofficehoursapp
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -202,7 +208,9 @@ fun ProfessorsScreen(
             modifier = modifier.fillMaxSize()
         ) {
             Column(
-                modifier = Modifier.weight(1f).padding(16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -260,12 +268,31 @@ fun ProfessorCard(professor: Professor, onClick: () -> Unit, modifier: Modifier 
         colors = CardDefaults.cardColors(containerColor = NeutralColor)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(text = professor.name, style = Typography.titleLarge, color = TextColor)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            Text(text = professor.email, style = Typography.bodyMedium, color = TextColor.copy(alpha = 0.7f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth())
+            {
+                Text(
+                    text = professor.name,
+                    style = Typography.titleLarge,
+                    color = TextColor,
+                    modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favourite",
+                    tint = NewButtonColor,
+                    modifier = Modifier.padding(end = 17.dp)
+                )
+            }
+            Text(text = professor.email, color = TextColor, fontSize = 14.sp, fontStyle = FontStyle.Italic)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = TempleRed)
+            ReservationDetailRow("Days:", "Monday, Wednesday, Friday")
+            ReservationDetailRow("Times:", "13:00 - 14:20")
         }
     }
 }
@@ -417,6 +444,7 @@ fun BookingDialog(
     )
 
     AlertDialog(
+        containerColor = Color.White,
         onDismissRequest = onDismiss,
         title = { Text("Book with ${uiState.selectedProfessor?.name}") },
         text = {
@@ -425,6 +453,12 @@ fun BookingDialog(
                     value = uiState.selectedDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) ?: "Select a date",
                     onValueChange = {},
                     readOnly = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedLabelColor = AccentColor
+                        ),
                     label = { Text("Date") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -444,6 +478,12 @@ fun BookingDialog(
                         value = selectedSlot?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Select a time slot",
                         onValueChange = {},
                         label = { Text("Available Slots") },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = AccentColor,
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            focusedLabelColor = AccentColor
+                        ),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isSlotDropdownExpanded) },
                         modifier = Modifier
                             .menuAnchor()
@@ -476,12 +516,19 @@ fun BookingDialog(
                     value = note,
                     onValueChange = { note = it },
                     label = { Text("Note for professor (optional)") },
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = AccentColor,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        focusedLabelColor = AccentColor,
+                        cursorColor = TempleRed
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            Button(
+            Button(colors = ButtonDefaults.buttonColors(containerColor = NewButtonColor),
                 onClick = {
                     selectedSlot?.let { onConfirmBooking(it, note) }
                 },
@@ -489,7 +536,8 @@ fun BookingDialog(
             ) { Text("Book Now") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("Cancel") }
         }
     )
 
@@ -527,13 +575,24 @@ fun BookingDialog(
                     } ?: run {
                         Toast.makeText(context, "Please select a date.", Toast.LENGTH_SHORT).show()
                     }
-                }) { Text("OK") }
+                }, colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            }
+                TextButton(onClick = { showDatePicker = false }, colors = ButtonDefaults.textButtonColors(contentColor = NewButtonColor)) { Text("Cancel") }
+            },
+            colors = DatePickerDefaults.colors(containerColor = NeutralColor)
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = NeutralColor,
+                    selectedDayContainerColor = TempleRed,
+                    selectedDayContentColor = Color.White,
+                    todayContentColor = TempleRed,
+                    todayDateBorderColor = TempleRed,
+                    selectedYearContainerColor = TempleRed,
+                    selectedYearContentColor = Color.White,
+                    dateTextFieldColors = TextFieldDefaults.textFieldColors(focusedLabelColor = AccentColor, containerColor = NeutralColor, cursorColor = TempleRed, focusedIndicatorColor = AccentColor)
+                ))
         }
     }
 }
