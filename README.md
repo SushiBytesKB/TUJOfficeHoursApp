@@ -1,26 +1,28 @@
-# TUJ Office Hours App
+# TUJ Office Hours App (Android)
 
-A full-stack web application designed to streamline the scheduling and management of office hours for students and faculty at Temple University, Japan Campus (TUJ).
+An Android application built with Android Studio and Firebase to streamline the scheduling and management of office hours for students and faculty at Temple University, Japan Campus (TUJ).
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/SushiBytesKB/TUJOfficeHoursApp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Stars](https://img.shields.io/github/stars/SushiBytesKB/TUJOfficeHoursApp)](https://github.com/SushiBytesKB/TUJOfficeHoursApp/stargazers)
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84.svg?style=flat&logo=android)](https://www.android.com/)
 
 <p align="center">
-  <img src="https://via.placeholder.com/600x300.png?text=TUJ+Office+Hours+App+Screenshot" alt="App Screenshot" width="600px"/>
+  <img src="https://via.placeholder.com/250x500.png?text=Login+Screen" alt="App Screenshot 1" width="200px"/>
+  <img src="https://via.placeholder.com/250x500.png?text=Dashboard+Screen" alt="App Screenshot 2" width="200px"/>
+  <img src="https://via.placeholder.com/250x500.png?text=Booking+Screen" alt="App Screenshot 3" width="200px"/>
   <br />
-  <em>(Replace this placeholder with a screenshot of your application)</em>
+  <em>(Replace these placeholders with screenshots of your application)</em>
 </p>
 
 ## Table of Contents
 
 - [About The Project](#about-the-project)
 - [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
+- [Tech Stack & Architecture](#tech-stack--architecture)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installation & Setup](#installation--setup)
-- [Running the Application](#running-the-application)
+  - [Firebase Setup](#firebase-setup)
+  - [Installation & Build](#installation--build)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [License](#license)
@@ -28,40 +30,42 @@ A full-stack web application designed to streamline the scheduling and managemen
 
 ## About The Project
 
-Coordinating office hours between university faculty and students can often be a cumbersome process involving endless email chains, conflicting schedules, and manual tracking on spreadsheets. The **TUJ Office Hours App** was created to solve this problem for the Temple University, Japan Campus community.
+Coordinating office hours between university faculty and students can often be a cumbersome process. The **TUJ Office Hours App** was created as a native Android solution to solve this problem for the Temple University, Japan Campus community.
 
-This application provides a centralized, intuitive platform where:
-* **Faculty** can define their availability and manage their appointment calendar effortlessly.
-* **Students** can easily view professors' open slots and book appointments in just a few clicks.
+This application provides a centralized, mobile-first platform where:
+* **Faculty** can define their availability and manage their appointment calendar directly from their phone.
+* **Students** can easily view professors' open slots and book appointments on the go.
 
-The goal is to save time, reduce administrative overhead, and create a more efficient and pleasant experience for everyone involved.
+The goal is to provide a fast, responsive, and convenient mobile experience that saves time and reduces administrative overhead.
 
 ## Key Features
 
-* 👤 **Role-Based Authentication:** Secure login for both Students and Faculty with distinct permissions.
+* 👤 **Role-Based Authentication:** Secure login/signup for both Students and Faculty using Firebase Authentication.
 * 👨‍🏫 **Professor Dashboard:**
     * Set and update weekly office hour availability.
-    * View all booked appointments at a glance.
+    * View all booked appointments in a clean, organized list.
     * Manage and cancel appointments.
 * 🎓 **Student Dashboard:**
     * Browse a list of professors and their available office hours.
     * Book an appointment slot that fits their schedule.
     * View and cancel their upcoming appointments.
-* 🗓️ **Interactive Calendar View:** A visual representation of available and booked slots.
-* 📧 **Email Notifications:** (Optional Feature) Automated email confirmations and reminders for booked appointments.
+* ⚡ **Real-time Updates:** Data is synced in real-time using Cloud Firestore, so changes are reflected instantly.
+* 🔔 **Push Notifications:** (Optional Feature) Using Firebase Cloud Messaging to send confirmations and reminders.
 
-## Tech Stack
+## Tech Stack & Architecture
 
-This project is built with a modern MERN stack architecture.
+This project is a native Android application developed using modern tools and practices.
 
-| Component | Technology |
+| Component | Technology / Library |
 | :--- | :--- |
-| **Frontend** | ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) |
-| **Backend** | ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![Express.js](https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB) |
-| **Database** | ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white) |
-| **Authentication** | JSON Web Tokens (JWT) |
-| **Styling** | ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) |
-| **Development**| Vite (Frontend), Nodemon (Backend) |
+| **IDE** | ![Android Studio](https://img.shields.io/badge/Android%20Studio-3DDC84.svg?style=for-the-badge&logo=android-studio&logoColor=white) |
+| **Language** | ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF.svg?style=for-the-badge&logo=kotlin&logoColor=white) |
+| **Backend** | ![Firebase](https://img.shields.io/badge/Firebase-FFCA28.svg?style=for-the-badge&logo=firebase&logoColor=black) |
+| **UI** | Jetpack Compose / XML Layouts |
+| **Architecture** | MVVM (Model-View-ViewModel) |
+| **Firebase Services**| Authentication, Cloud Firestore, Cloud Storage |
+| **Dependencies** | ViewModel, LiveData/Flow, Navigation Component, Coroutines |
+
 
 ## Getting Started
 
@@ -69,60 +73,42 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-Make sure you have the following installed on your machine:
-* [Node.js](https://nodejs.org/) (v18.x or later recommended)
-* [npm](https://www.npmjs.com/) (usually comes with Node.js)
-* [Git](https://git-scm.com/)
+Make sure you have the latest stable version of **Android Studio** installed.
+* [Download Android Studio](https://developer.android.com/studio)
+* Ensure you have the Android SDK and JDK properly configured within Android Studio.
 
-### Installation & Setup
+### Firebase Setup
+
+This project requires a Firebase backend. You will need to create your own Firebase project to run it.
+
+1.  Go to the [Firebase Console](https://console.firebase.google.com/).
+2.  Click **"Add project"** and follow the steps to create a new project.
+3.  Inside your project, add a new **Android App**. Use the package name found in your `app/build.gradle.kts` (or `.gradle`) file (e.g., `com.sushibyteskb.tujofficehoursapp`).
+4.  Download the generated **`google-services.json`** file. **This file is crucial.**
+5.  In the Firebase Console, navigate to the **Authentication** section and enable the **Email/Password** sign-in method.
+6.  Navigate to the **Cloud Firestore** section and create a database. Start in **test mode** for initial development (but remember to secure your rules for production!).
+
+### Installation & Build
 
 1.  **Clone the repository:**
     ```sh
     git clone [https://github.com/SushiBytesKB/TUJOfficeHoursApp.git](https://github.com/SushiBytesKB/TUJOfficeHoursApp.git)
-    cd TUJOfficeHoursApp
     ```
 
-2.  **Set up the Backend (Server):**
-    ```sh
-    cd server
-    npm install
-    ```
-    Create a `.env` file in the `server` directory and add the following environment variables. Use the `.env.example` file as a guide.
-    ```env
-    PORT=5001
-    MONGO_URI=your_mongodb_connection_string
-    JWT_SECRET=your_super_secret_jwt_key
-    ```
+2.  **Open the project in Android Studio:**
+    * Open Android Studio.
+    * Select "Open" and navigate to the cloned repository folder.
 
-3.  **Set up the Frontend (Client):**
-    ```sh
-    cd ../client
-    npm install
-    ```
-    The client will proxy API requests to the backend server, configured in `client/vite.config.js`.
+3.  **Add your Firebase config file:**
+    * Locate the `google-services.json` file you downloaded earlier.
+    * Switch to the **Project** view in the Android Studio project explorer (top-left dropdown).
+    * Place the `google-services.json` file inside the `app/` directory.
 
-## Running the Application
-
-You will need to run the frontend and backend servers in separate terminals.
-
-1.  **Run the Backend Server:**
-    * Navigate to the `/server` directory.
-    * Start the server in development mode (with hot-reloading via Nodemon).
-    ```sh
-    cd server
-    npm run dev
-    ```
-    The server will be running on `http://localhost:5001`.
-
-2.  **Run the Frontend Client:**
-    * Navigate to the `/client` directory.
-    * Start the React development server.
-    ```sh
-    cd client
-    npm run dev
-    ```
-    The application will open automatically in your browser at `http://localhost:5173`.
+4.  **Sync and Build:**
+    * Android Studio should prompt you to sync the project with the Gradle files. If not, click the "Sync Project with Gradle Files" button (elephant icon).
+    * Once the sync is complete, build the project (Build > Make Project).
+    * Run the app on an Android emulator or a physical device.
 
 ## Project Structure
 
-The repository is organized into two main folders: `client` for the frontend application and `server` for the backend API.
+The project follows a standard Android application structure.
