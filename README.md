@@ -6,14 +6,6 @@ An Android application built with Android Studio and Firebase to streamline the 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84.svg?style=flat&logo=android)](https://www.android.com/)
 
-<p align="center">
-  <img src="https://via.placeholder.com/250x500.png?text=Login+Screen" alt="App Screenshot 1" width="200px"/>
-  <img src="https://via.placeholder.com/250x500.png?text=Dashboard+Screen" alt="App Screenshot 2" width="200px"/>
-  <img src="https://via.placeholder.com/250x500.png?text=Booking+Screen" alt="App Screenshot 3" width="200px"/>
-  <br />
-  <em>(Replace these placeholders with screenshots of your application)</em>
-</p>
-
 ## Table of Contents
 
 - [About The Project](#about-the-project)
@@ -132,4 +124,5 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 SushiBytesKB - [GitHub Profile](https://github.com/SushiBytesKB)
 
 Project Link: [https://github.com/SushiBytesKB/TUJOfficeHoursApp](https://github.com/SushiBytesKB/TUJOfficeHoursApp)
+
 
