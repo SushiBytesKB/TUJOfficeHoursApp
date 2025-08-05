@@ -129,6 +129,7 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 
 ## Contact
 
-Kadin Boubuch - [GitHub Profile](https://github.com/SushiBytesKB)
+SushiBytesKB - [GitHub Profile](https://github.com/SushiBytesKB)
 
 Project Link: [https://github.com/SushiBytesKB/TUJOfficeHoursApp](https://github.com/SushiBytesKB/TUJOfficeHoursApp)
+
