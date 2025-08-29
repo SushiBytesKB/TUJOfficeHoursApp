@@ -17,6 +17,7 @@ An Android application built with Android Studio and Firebase to streamline the 
   - [Installation & Build](#installation--build)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
+- [Contributors](#contributors)
 - [License](#license)
 - [Contact](#contact)
 
@@ -104,6 +105,11 @@ This project requires a Firebase backend. You will need to create your own Fireb
 ## Project Structure
 
 The project follows a standard Android application structure.
+
+## Contributors
+- Sushant Bharadwaj Kagolanu - [https://github.com/SushiBytesKB](https://github.com/SushiBytesKB)
+- Bettina Marksteiner - [https://github.com/iggyw1g](https://github.com/Betty200121)
+- Andrew ZiYu Wang - [https://github.com/20wangaz2](https://github.com/Rp0115)
 
 ## Contributing
 
