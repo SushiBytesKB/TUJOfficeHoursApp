@@ -109,7 +109,7 @@ The project follows a standard Android application structure.
 ## Contributors
 - Sushant Bharadwaj Kagolanu - [https://github.com/SushiBytesKB](https://github.com/SushiBytesKB)
 - Bettina Marksteiner - [https://github.com/iggyw1g](https://github.com/Betty200121)
-- Andrew ZiYu Wang - [https://github.com/20wangaz2](https://github.com/Rp0115)
+- Riju Pant - [https://github.com/20wangaz2](https://github.com/Rp0115)
 
 ## Contributing
 
@@ -130,5 +130,6 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 SushiBytesKB - [GitHub Profile](https://github.com/SushiBytesKB)
 
 Project Link: [https://github.com/SushiBytesKB/TUJOfficeHoursApp](https://github.com/SushiBytesKB/TUJOfficeHoursApp)
+
 
 
